@@ -1,0 +1,120 @@
+<html>
+<head>
+<link rel=Stylesheet href="/css/main.css">
+<script src="/js/socket.io.js"></script>
+<script src="/js/json2.js"></script>
+<script src="/js/raphael.js"></script>
+<script src="/js/objectConst.js"></script>
+<script src="/js/objectMaker.js"></script>
+<script src="/js/objectMediator.js"></script>
+<script src="/js/objectCollection.js"></script>
+<script src="/js/util.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js"></script>
+<script src="/js/sprintf.js"></script>
+
+<script type='text/javascript'>
+var start_rect;
+var v = {
+    'campus'   :{'w':1000, 'h':500,'margin':{'w':30,'h':10}},
+    'pathL'    :{'attr':{"stroke":"royalblue", "stroke-width":10}},
+    'pathM'    :{},
+    'rectStart':{'w':100, 'h':40,
+                 'attr':{"stroke":"gray", "stroke-width":1, "fill-opacity":0, "gradient":'100-#FFFF93-#F5FF93'}},
+    'circle'   :{'r':7,
+                 'attr':{"stroke":"darkblue", "stroke-width":2, "fill":'red'}},
+    'rectL'    :{'w':100, 'h':40,
+                 'attr':{"stroke":"white", "stroke-width":1, "fill-opacity":0, "gradient":'100-#40E0D0-#7FFFD4'}},
+    'rectM'    :{'attr':{"stroke":"darkblue", "stroke-width":1, "fill-opacity":0, "gradient":'100-#40E0D0-#7FFFD4'}},
+    'rectEnd'  :{'w':100, 'h':40,
+                 'attr':{"stroke":"gray", "stroke-width":1, "fill-opacity":0, "gradient":'100-#FF82AB-#FFAEB9'}},
+    'rectMOn'  :{'attr':{"stroke":"crimson" , "scale":1.5}},
+    'font_m'   :{'attr':{"fill":"100-blue-darkblue", 'font-size':17, 'font-family':'MS UI Gothic'}},
+    'taskInterval':70,
+    'taskR' :10,
+}
+$ (function() {
+    // mediator = new ObjectMediator();
+    // mediator.setUp();
+
+    raphael = Raphael(document.getElementById('main_boad'), v.campus.w, v.campus.h);
+
+    nextX = v.campus.margin.w;
+
+    // start描画
+    start_rect = raphael.rect(nextX, y=v.campus.margin.h, w=v.rectStart.w, y2=v.rectStart.h, v.taskR)
+                 .attr($.extend(v.rectStart.attr, {'scale':0.1}))
+                 .animate({'scale':1}, 700, 'bounce');
+
+    var b = start_rect.getBBox();
+    var tx = raphael.text(b.x, b.y, '大項目').
+        attr(v.font_m.attr);
+
+    start_rect.click(function(ev) {log(this.attr())});
+
+    nextX += (v.rectStart.w + v.taskInterval);
+    var obj = objects();
+
+    // tasks描画
+    for (var i=0; i < obj.tasks.length; i++) { 
+
+        var rc = raphael.rect(x = nextX, y= v.campus.margin.h, w = v.rectL.w, h=v.rectL.h, v.taskR)
+                        .attr($.extend(v.rectL.attr, {'scale':0.1}))
+                        .animate({'scale':1}, 700, 'bounce');
+
+        // rc.click(function(){log(this.getBBox())});
+
+        var circle = raphael.circle(x + v.circle.r, y = v.campus.margin.h + v.circle.r, v.circle.r)
+                            .attr($.extend(v.circle.attr,{'scale':0.1}))
+                            .animate({'scale':1}, 700, 'bounce');
+
+        // sets click handler on task's group
+        var e = raphael.set()
+                       .push(rc)
+                       .push(circle);
+        e.click(function(){log(e.attr({'stroke':'darkgray','fill':'gray'}))});
+
+        nextX += (v.rectL.w + v.taskInterval);
+    }
+
+    // goal描画
+    raphael.rect(nextX, y = v.campus.margin.h, w = v.rectEnd.w, y2 = v.rectEnd.h, v.taskR)
+           .attr($.extend(v.rectEnd.attr, {'scale':0.1}))
+           .animate({'scale':1}, 700, 'bounce');
+
+    var pathL_y = v.campus.margin.h + (v.rectStart.h / 2);
+
+    var a = raphael.path($.sprintf('"M %d %d  L 1000 %d',v.campus.margin.w, pathL_y, pathL_y)) 
+           .attr($.extend(v.pathL.attr,{'scale':0.1}))
+           .animate({'scale':1}, 800)
+           .toBack();
+  });
+
+function log(msg)
+{
+    if (typeof console == 'object') {
+        console.log(msg);
+    }
+}
+function objects(){
+    return  {
+        'title'      :'このアプリ完成まで',
+            'tasks' : [
+            {'title':'大項目1',
+                'tasks':[]},
+            {'title':'大項目2',
+                'tasks':[{'title':'中項目1'},{'title':'中項目2'}]},
+            {'title':'大項目3',
+                'tasks':[{'title':'中項目3'},{'title':'中項目4'}]},
+            ],
+    };
+}
+</script>
+</head>
+<h2></h2>
+<hr/>
+<div class='campus' id='main_boad'>
+</div>
+<body>
+    
+
+</body>
