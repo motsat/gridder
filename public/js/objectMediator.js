@@ -1,82 +1,100 @@
 // 以下の仲介役
-ObjectMediator = function() {};
-ObjectMediator.prototype.setUp             = function() {};
-ObjectMediator.prototype.onObjectDragStart = function(id){
-    socket.send({'action': ACTION_TYPE.REQUEST_LOCK, 'id': id})
-};
-ObjectMediator.prototype.onObjectDragEnd = function(id, attr){
-    socket.send({"action": ACTION_TYPE.REQUEST_EDIT,
-                 "id"    : id,
-                 "attr"  : attr});
-};
 
-ObjectMediator.prototype.setUp = function() {
-   var collection = new ObjectCollection();
-       socket     = new io.Socket('motoki.local',{port:8000}),
-       raphael    = Raphael(document.getElementById('main_boad'), 500, 500);
-
-
-
-
-   return;
-
-   var collection = new ObjectCollection();
-       socket     = new io.Socket('motoki.local',{port:8000}),
-       raphael    = Raphael(document.getElementById('svg_campus'), 500, 500);
-
-     socket.connect();
-     socket.on('message', function(msg)
-     {
-
-       if (msg.action == ACTION_TYPE.CREATE) {
-           createObject(msg.id, msg.type);
-           return;
-       }
-
-       var obj = collection.find(msg.id);
-
-       switch (msg.action) {
-         case ACTION_TYPE.LOCK:
-           obj.setStatus(OBJECT_STATUS.LOCK);
-           break;
-         case ACTION_TYPE.EDIT:
-           obj.setStatus(OBJECT_STATUS.NONE);
-           // typeによって処理？
-           // attrって渡し方がよくない気がする。pathとかattrとかいろいろあるし
-           // 何がある？
-           switch (obj.type){
-           case OBJECT_TYPE.CIRCLE:
-             obj.object.animate(msg.attr, 300);
-             break;
-           case OBJECT_TYPE.PATH:
-             //obj.object.attr({path:pathToString(msg.attr.path)});
-             obj.object.animate({path:pathToString(msg.attr.path)},300);
-            break;
-           }
-           break;
-       }
-     });
-
-     $('#creae_button').bind('click', function() {
-         socket.send({"action":ACTION_TYPE.REQUEST_CREATE,
-           "type"  :$('#object_type').val()});
-         });
-
-var createObject = function (id, type)
+TaskRenderer = function(config, raphael) 
 {
-    var objectName;
-    switch (type) {
-      case  OBJECT_TYPE.CIRCLE:
-        objectName = 'Circle';
-        break;
-      case  OBJECT_TYPE.PATH:
-        objectName = 'Path';
-        break;
-      default:
-        throw('unknown type ' + type);
-        break;
+    this.config  = config;
+    this.raphael = raphael;
+}
+
+TaskRenderer.prototype.renderStart = function(x){
+  var v       = this.config.visual,
+      o       = this.config.objects,
+      raphael = this.raphael;
+
+  var start_rect = raphael.rect(x, y=v.campus.margin.h, w=v.rectStart.w, y2=v.rectStart.h, v.taskR)
+                   .attr($.extend(v.rectStart.attr, {'scale':0.1}))
+                   .animate({'scale':1}, 700, 'bounce');
+
+  var b = start_rect.getBBox();
+  var tx = raphael.text(b.x, b.y, '大項目').
+      attr(v.font_m.attr);
+}
+
+TaskRenderer.prototype.renderGoal = function(x){
+  var v       = this.config.visual,
+      o       = this.config.objects,
+      raphael = this.raphael;
+
+   raphael.rect(x, y = v.campus.margin.h, w = v.rectEnd.w, y2 = v.rectEnd.h, v.taskR)
+          .attr($.extend(v.rectEnd.attr, {'scale':0.1}))
+          .animate({'scale':1}, 700, 'bounce');
+}
+
+TaskRenderer.prototype.renderPath = function(x){
+  var v       = this.config.visual,
+      o       = this.config.objects,
+      raphael = this.raphael;
+  var pathL_y = v.campus.margin.h + (v.rectStart.h / 2);
+
+  var a = raphael.path($.sprintf('"M %d %d  L 1000 %d',v.campus.margin.w, pathL_y, pathL_y)) 
+         .attr($.extend(v.pathL.attr,{'scale':0.1}))
+         .animate({'scale':1}, 800)
+         .toBack();
+}
+TaskRenderer.prototype.renderTask = function(x, i){
+  var v       = this.config.visual,
+      o       = this.config.objects,
+      raphael = this.raphael;
+
+  var rc = raphael.rect(x, y= v.campus.margin.h, w = v.rectL.w, h=v.rectL.h, v.taskR)
+    .attr($.extend(v.rectL.attr, {'scale':0.1}))
+    .animate({'scale':1}, 700, 'bounce')
+    .mouseover(function(){im.show()})
+    .mouseout(function(){im.hide()});
+
+  var circle = raphael.circle(x + v.circle.r, y = v.campus.margin.h + v.circle.r, v.circle.r)
+    .attr($.extend(v.circle.attr,{'scale':0.1}))
+    .animate({'scale':1}, 700, 'bounce');
+
+  // sets click handler on task's group
+  var im = raphael.image('/images/pencil.gif', x, y =  v.campus.margin.h, w = v.icon.w, h = v.icon.h)
+      .hide();
+
+  im.mouseover(function(){im.show()});
+  im.mouseout(function(){im.hide()});
+  im.click(function(str){log(i+'click image')});
+}
+TaskRenderer.prototype.renderAll = function(x, i){
+
+  // tasks描画
+  var v       = this.config.visual,
+      o       = this.config.objects,
+      raphael = this.raphael;
+
+    this.renderStart(nextX);
+
+    nextX += (v.rectStart.w + v.taskInterval);
+
+    for (var i=0; i < o.tasks.length; i++) { 
+        this.renderTask(nextX,i);
+        nextX += (v.rectL.w + v.taskInterval);
     }
-    collection.add(ObjectMaker.factory(objectName, raphael, id, mediator));
-};
+
+    this.renderGoal(nextX);
+    this.renderPath(nextX);
+
+}
+
+ObjectMediator = function() {};
+ObjectMediator.prototype.setUp = function(config) {
+
+   var socket       = new io.Socket(config.server_host,{port:config.port}),
+       v            = config.visual;
+       raphael      = Raphael(document.getElementById(config.paper_id), v.campus.w, v.campus.h),
+       nextX        = v.campus.margin.w,
+       taskRenderer = new TaskRenderer(config, raphael);
+
+       taskRenderer.renderAll();
+return;
 };
 

@@ -35,64 +35,17 @@ var v = {
 
 $ (function() {
 
-    // mediator = new ObjectMediator();
-    // mediator.setUp();
 
-    raphael = Raphael(document.getElementById('main_boad'), v.campus.w, v.campus.h);
+    var config = {'paper_id'   :'main_boad',
+                  'server_host':'motoki.local',
+                  'port'       :'8000',
+                  'objects'    :getObjects(),
+                  'visual'     :v};
 
-    nextX = v.campus.margin.w;
+    mediator = new ObjectMediator();
+    mediator.setUp(config);
 
-    // start描画
-    start_rect = raphael.rect(nextX, y=v.campus.margin.h, w=v.rectStart.w, y2=v.rectStart.h, v.taskR)
-                 .attr($.extend(v.rectStart.attr, {'scale':0.1}))
-                 .animate({'scale':1}, 700, 'bounce');
-
-    var b = start_rect.getBBox();
-    var tx = raphael.text(b.x, b.y, '大項目').
-        attr(v.font_m.attr);
-
-    start_rect.click(function(ev) {log(this.attr())});
-
-    nextX += (v.rectStart.w + v.taskInterval);
-
-    var objects = getObjects();
-    // tasks描画
-    for (var i=0; i < objects.tasks.length; i++) { 
-
-        var rc = raphael.rect(x = nextX, y= v.campus.margin.h, w = v.rectL.w, h=v.rectL.h, v.taskR)
-                        .attr($.extend(v.rectL.attr, {'scale':0.1}))
-                        .animate({'scale':1}, 700, 'bounce');
-
-        var circle = raphael.circle(x + v.circle.r, y = v.campus.margin.h + v.circle.r, v.circle.r)
-                            .attr($.extend(v.circle.attr,{'scale':0.1}))
-                            .animate({'scale':1}, 700, 'bounce');
-
-        // sets click handler on task's group
-        im = raphael.image('/images/pencil.gif', x = nextX, y =  v.campus.margin.h, w = v.icon.w, h = v.icon.h)
-             .hide();
-        rc.mouseover(function(){im.show()});
-        rc.mouseout(function(){im.hide()});
-
-        im.mouseover(function(){im.show()});
-        im.mouseout(function(){im.hide()});
-        im.click(function(){log('click image')});
-
-        nextX += (v.rectL.w + v.taskInterval);
-    }
-
-    // goal描画
-    raphael.rect(nextX, y = v.campus.margin.h, w = v.rectEnd.w, y2 = v.rectEnd.h, v.taskR)
-           .attr($.extend(v.rectEnd.attr, {'scale':0.1}))
-           .animate({'scale':1}, 700, 'bounce');
-
-    var pathL_y = v.campus.margin.h + (v.rectStart.h / 2);
-
-    var a = raphael.path($.sprintf('"M %d %d  L 1000 %d',v.campus.margin.w, pathL_y, pathL_y)) 
-           .attr($.extend(v.pathL.attr,{'scale':0.1}))
-           .animate({'scale':1}, 800)
-           .toBack();
-    log(a);
-  });
+ });
 
 function log(msg)
 {
@@ -101,16 +54,20 @@ function log(msg)
     }
 }
 function getObjects(){
+
     return  {
-        'title'      :'このアプリ完成まで',
-            'tasks' : [
-            {'title':'大項目1',
-                'tasks':[]},
-            {'title':'大項目2',
-                'tasks':[{'title':'中項目1'},{'title':'中項目2'}]},
-            {'title':'大項目3',
-                'tasks':[{'title':'中項目3'},{'title':'中項目4'}]},
-            ]
+        'title'     :'このアプリ完成まで',
+        '__id'      :'1',
+        'tasks' :[{'__id' :'1-1',
+                   'title':'大項目1',
+                   'tasks':[]},
+                  {'__id' :'1-2',
+                   'title':'大項目2',
+                   'tasks':[{'__id' :'1-2-1',
+                             'title':'中項目1'},
+                            {'__id' :'1-2-2',
+                             'title':'中項目2'}]},
+        ]
     };
 }
 </script>
