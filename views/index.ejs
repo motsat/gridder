@@ -15,24 +15,26 @@
 <script type='text/javascript'>
 var start_rect;
 var v = {
-    'campus'   :{'w':1000, 'h':500,'margin':{'w':30,'h':10}},
-    'pathL'    :{'attr':{"stroke":"royalblue", "stroke-width":10}},
+    'campus'   :{'w':1000, 'h':250,'margin':{'w':30,'h':10}},
+    'pathL'    :{'attr':{"stroke":"royalblue", "stroke-width":10, opacity:0.5}},
     'pathM'    :{},
     'rectStart':{'w':100, 'h':40,
-                 'attr':{"stroke":"gray", "stroke-width":1, "fill-opacity":0, "gradient":'100-#FFFF93-#F5FF93'}},
+                 'attr':{"stroke":"gray", "stroke-width":1, "gradient":'100-#FFFF93-#D1DA93'}},
     'circle'   :{'r':7,
                  'attr':{"stroke":"darkblue", "stroke-width":2, "fill":'red'}},
     'rectL'    :{'w':100, 'h':40,
-                 'attr':{"stroke":"white", "stroke-width":1, "fill-opacity":0, "gradient":'100-#40E0D0-#7FFFD4'}},
-    'rectM'    :{'attr':{"stroke":"darkblue", "stroke-width":1, "fill-opacity":0, "gradient":'100-#40E0D0-#7FFFD4'}},
+                 'attr':{"stroke":"white", "stroke-width":1, "gradient":'100-#40E0D0-#7FFFD4'}},
+    'rectM'    :{'attr':{"stroke":"darkblue", "stroke-width":1, "gradient":'100-#40E0D0-#7FFFD4'}},
     'rectEnd'  :{'w':100, 'h':40,
-                 'attr':{"stroke":"gray", "stroke-width":1, "fill-opacity":0, "gradient":'100-#FF82AB-#FFAEB9'}},
+                 'attr':{"stroke":"gray", "stroke-width":1, "gradient":'100-#FF82AB-#FFAEB9'}},
     'rectMOn'  :{'attr':{"stroke":"crimson" , "scale":1.5}},
     'font_m'   :{'attr':{"fill":"100-blue-darkblue", 'font-size':17, 'font-family':'MS UI Gothic'}},
+    'icon'     :{"w":20,"h":20},
     'taskInterval':70,
-    'taskR' :10,
-}
+    'taskR'    :10};
+
 $ (function() {
+
     // mediator = new ObjectMediator();
     // mediator.setUp();
 
@@ -52,26 +54,28 @@ $ (function() {
     start_rect.click(function(ev) {log(this.attr())});
 
     nextX += (v.rectStart.w + v.taskInterval);
-    var obj = objects();
 
+    var objects = getObjects();
     // tasks描画
-    for (var i=0; i < obj.tasks.length; i++) { 
+    for (var i=0; i < objects.tasks.length; i++) { 
 
         var rc = raphael.rect(x = nextX, y= v.campus.margin.h, w = v.rectL.w, h=v.rectL.h, v.taskR)
                         .attr($.extend(v.rectL.attr, {'scale':0.1}))
                         .animate({'scale':1}, 700, 'bounce');
-
-        // rc.click(function(){log(this.getBBox())});
 
         var circle = raphael.circle(x + v.circle.r, y = v.campus.margin.h + v.circle.r, v.circle.r)
                             .attr($.extend(v.circle.attr,{'scale':0.1}))
                             .animate({'scale':1}, 700, 'bounce');
 
         // sets click handler on task's group
-        var e = raphael.set()
-                       .push(rc)
-                       .push(circle);
-        e.click(function(){log(e.attr({'stroke':'darkgray','fill':'gray'}))});
+        im = raphael.image('/images/pencil.gif', x = nextX, y =  v.campus.margin.h, w = v.icon.w, h = v.icon.h)
+             .hide();
+        rc.mouseover(function(){im.show()});
+        rc.mouseout(function(){im.hide()});
+
+        im.mouseover(function(){im.show()});
+        im.mouseout(function(){im.hide()});
+        im.click(function(){log('click image')});
 
         nextX += (v.rectL.w + v.taskInterval);
     }
@@ -87,6 +91,7 @@ $ (function() {
            .attr($.extend(v.pathL.attr,{'scale':0.1}))
            .animate({'scale':1}, 800)
            .toBack();
+    log(a);
   });
 
 function log(msg)
@@ -95,7 +100,7 @@ function log(msg)
         console.log(msg);
     }
 }
-function objects(){
+function getObjects(){
     return  {
         'title'      :'このアプリ完成まで',
             'tasks' : [
@@ -105,16 +110,20 @@ function objects(){
                 'tasks':[{'title':'中項目1'},{'title':'中項目2'}]},
             {'title':'大項目3',
                 'tasks':[{'title':'中項目3'},{'title':'中項目4'}]},
-            ],
+            ]
     };
 }
 </script>
 </head>
-<h2></h2>
+<body>
+<h2>Gridder</h2>
+
+<img width='20' height='20' src='/images/pencil.gif'/>
+<img width='20' height='20' src='/images/plus.png'/>
+<img width='20' height='20' src='/images/trash.jpg'/>
+
 <hr/>
 <div class='campus' id='main_boad'>
 </div>
-<body>
-    
 
 </body>

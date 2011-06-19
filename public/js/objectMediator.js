@@ -13,6 +13,15 @@ ObjectMediator.prototype.onObjectDragEnd = function(id, attr){
 ObjectMediator.prototype.setUp = function() {
    var collection = new ObjectCollection();
        socket     = new io.Socket('motoki.local',{port:8000}),
+       raphael    = Raphael(document.getElementById('main_boad'), 500, 500);
+
+
+
+
+   return;
+
+   var collection = new ObjectCollection();
+       socket     = new io.Socket('motoki.local',{port:8000}),
        raphael    = Raphael(document.getElementById('svg_campus'), 500, 500);
 
      socket.connect();
