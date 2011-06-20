@@ -1,100 +1,132 @@
 // 以下の仲介役
-
-TaskRenderer = function(config, raphael) 
+TaskRenderer = function(config, raphael, mediator) 
 {
-    this.config  = config;
-    this.raphael = raphael;
+    this.o  = config.objects;
+    this.v  = config.visual;
+    this.raphael  = raphael;
+    this.mediator = mediator;
+    this.shapes = {
+        'start_task' : [],
+        'tasks'      : [],
+        'end_task'   : []
+    };
+}
+TaskRenderer.prototype.renderStart = function(x){
+
+  var start_rect = this.raphael.rect(x, y=this.v.campus.margin.h, w= this.v.rectStart.w, 
+                                     y2= this.v.rectStart.h, this.v.taskR)
+                                .attr($.extend(this.v.rectStart.attr, {'scale':0.1}))
+                                .animate({'scale':1}, 700, 'bounce');
+
+  start_rect.click(this.mediator.onTaskClick);
+
+  var bBox  = start_rect.getBBox(),
+      tx    = this.raphael.text(bBox.x, bBox.y, 'スタート').
+              attr(this.v.font_m.attr);
 }
 
-TaskRenderer.prototype.renderStart = function(x){
-  var v       = this.config.visual,
-      o       = this.config.objects,
-      raphael = this.raphael;
 
-  var start_rect = raphael.rect(x, y=v.campus.margin.h, w=v.rectStart.w, y2=v.rectStart.h, v.taskR)
-                   .attr($.extend(v.rectStart.attr, {'scale':0.1}))
-                   .animate({'scale':1}, 700, 'bounce');
+TaskRenderer.prototype.renderPath = function(x, mediator){
+  var pathL_y = v.campus.margin.h + (v.rectStart.h / 2);
 
-  var b = start_rect.getBBox();
-  var tx = raphael.text(b.x, b.y, '大項目').
-      attr(v.font_m.attr);
+  var a = this.raphael.path($.sprintf('"M %d %d  L 1000 %d',this.v.campus.margin.w, pathL_y, pathL_y)) 
+              .attr($.extend(this.v.pathL.attr,{'scale':0.1}))
+              .animate({'scale':1}, 800)
+              .click(function(evt){mediator.onClickPath(evt)})
+              .toBack();
+
 }
 
 TaskRenderer.prototype.renderGoal = function(x){
-  var v       = this.config.visual,
-      o       = this.config.objects,
-      raphael = this.raphael;
-
-   raphael.rect(x, y = v.campus.margin.h, w = v.rectEnd.w, y2 = v.rectEnd.h, v.taskR)
-          .attr($.extend(v.rectEnd.attr, {'scale':0.1}))
-          .animate({'scale':1}, 700, 'bounce');
+   var goal_rect  = this.raphael.rect(x, y = this.v.campus.margin.h, w = this.v.rectEnd.w, y2 = this.v.rectEnd.h, this.v.taskR)
+                        .attr($.extend(this.v.rectEnd.attr, {'scale':0.1}))
+                        .animate({'scale':1}, 700, 'bounce'),
+       bBox       = goal_rect.getBBox(),
+       tx         = this.raphael.text(bBox.x, bBox.y, this.o.goal_title).
+                    attr(this.v.font_m.attr);
 }
 
-TaskRenderer.prototype.renderPath = function(x){
-  var v       = this.config.visual,
-      o       = this.config.objects,
-      raphael = this.raphael;
-  var pathL_y = v.campus.margin.h + (v.rectStart.h / 2);
+TaskRenderer.prototype.renderTask = function(x, task, mediator){
 
-  var a = raphael.path($.sprintf('"M %d %d  L 1000 %d',v.campus.margin.w, pathL_y, pathL_y)) 
-         .attr($.extend(v.pathL.attr,{'scale':0.1}))
-         .animate({'scale':1}, 800)
-         .toBack();
+  var rc = this.raphael.rect(x, y= v.campus.margin.h, w = v.rectL.w, h=v.rectL.h, v.taskR)
+               .attr($.extend(v.rectL.attr, {'scale':0.1}))
+               .animate({'scale':1}, 700, 'bounce')
+               .mouseover(function() {showIcons()})
+               .mouseout(function() {hideIcons()});
+
+  var editImg = this.raphael.image('/images/pencil.gif', x, y =  v.campus.margin.h, w = v.icon.w, h = v.icon.h)
+          .hide()
+          .mouseover(function() {showIcons()})
+          .mouseout(function() {hideIcons()})
+          .click(function() {mediator.onClickEditTask(task)});
+
+  var addImg = this.raphael.image('/images/plus.png', x + v.icon.margin , y =  v.campus.margin.h, w = v.icon.w, h = v.icon.h)
+          .hide()
+          .mouseover(function() {showIcons()})
+          .mouseout(function() {hideIcons()})
+          .click(function() {mediator.onClickAddTask(task)});
+
+  var showIcons = function(){editImg.show();addImg.show();},
+      hideIcons = function(){editImg.hide();addImg.hide();};
+
+
+  var e = this.raphael.set()
+              .push(rc)
+              .push(editImg)
+              .push(addImg);
+
+  this.shapes.tasks.push(e);
+log(this.shapes);
+log(this.shapes.tasks.length);
 }
-TaskRenderer.prototype.renderTask = function(x, i){
-  var v       = this.config.visual,
-      o       = this.config.objects,
-      raphael = this.raphael;
 
-  var rc = raphael.rect(x, y= v.campus.margin.h, w = v.rectL.w, h=v.rectL.h, v.taskR)
-    .attr($.extend(v.rectL.attr, {'scale':0.1}))
-    .animate({'scale':1}, 700, 'bounce')
-    .mouseover(function(){im.show()})
-    .mouseout(function(){im.hide()});
+TaskRenderer.prototype.renderAll = function(mediator){
 
-  var circle = raphael.circle(x + v.circle.r, y = v.campus.margin.h + v.circle.r, v.circle.r)
-    .attr($.extend(v.circle.attr,{'scale':0.1}))
-    .animate({'scale':1}, 700, 'bounce');
-
-  // sets click handler on task's group
-  var im = raphael.image('/images/pencil.gif', x, y =  v.campus.margin.h, w = v.icon.w, h = v.icon.h)
-      .hide();
-
-  im.mouseover(function(){im.show()});
-  im.mouseout(function(){im.hide()});
-  im.click(function(str){log(i+'click image')});
-}
-TaskRenderer.prototype.renderAll = function(x, i){
-
-  // tasks描画
-  var v       = this.config.visual,
-      o       = this.config.objects,
-      raphael = this.raphael;
+    var nextX = this.v.campus.margin.w;
+    this.mediator = mediator;
 
     this.renderStart(nextX);
 
-    nextX += (v.rectStart.w + v.taskInterval);
+    nextX += (this.v.rectStart.w + this.v.taskMargin);
 
-    for (var i=0; i < o.tasks.length; i++) { 
-        this.renderTask(nextX,i);
-        nextX += (v.rectL.w + v.taskInterval);
+    for (var i=0; i < this.o.tasks.length; i++) { 
+        this.renderTask(nextX, this.o.tasks[i], mediator);
+        nextX += (this.v.rectL.w + this.v.taskMargin);
     }
 
     this.renderGoal(nextX);
-    this.renderPath(nextX);
+    this.renderPath(nextX, mediator);
+}
+ObjectMediator = function() {};
+ObjectMediator.prototype.setUp = function(config) {
+   var socket       = new io.Socket(config.server_host,{port:config.port}),
+       raphael      = Raphael(document.getElementById(config.paper_id), config.visual.campus.w, config.visual.campus.h),
+       taskRenderer = new TaskRenderer(config, raphael, this);
+
+   this.config  = config;
+   taskRenderer.renderAll(this);
+   return;
+};
+
+ObjectMediator.prototype.onClickEditTask = function(task) {
+    $("div#task_title").text(task.title);
+}
+
+ObjectMediator.prototype.onClickAddTask = function(task) {
 
 }
 
-ObjectMediator = function() {};
-ObjectMediator.prototype.setUp = function(config) {
+ObjectMediator.prototype.onClickPath = function(evt) {
 
-   var socket       = new io.Socket(config.server_host,{port:config.port}),
-       v            = config.visual;
-       raphael      = Raphael(document.getElementById(config.paper_id), v.campus.w, v.campus.h),
-       nextX        = v.campus.margin.w,
-       taskRenderer = new TaskRenderer(config, raphael);
+  var num = this.taskNumByPathX(evt.x);
+  this.config.objects.tasks = pushArrayAt(this.config.objects.tasks, num-1, {title:'non title'});
 
-       taskRenderer.renderAll();
-return;
-};
+  // 新タスクの描画
 
+  // 描画済みタスクの移動
+}
+ObjectMediator.prototype.taskNumByPathX = function(pathX) {
+  // 計算式が適当なので詳細詰め
+  var v = this.config.visual;
+  return parseInt(pathX / (v.taskMargin + v.rectL.w));
+}

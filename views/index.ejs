@@ -28,23 +28,22 @@ var v = {
     'rectEnd'  :{'w':100, 'h':40,
                  'attr':{"stroke":"gray", "stroke-width":1, "gradient":'100-#FF82AB-#FFAEB9'}},
     'rectMOn'  :{'attr':{"stroke":"crimson" , "scale":1.5}},
-    'font_m'   :{'attr':{"fill":"100-blue-darkblue", 'font-size':17, 'font-family':'MS UI Gothic'}},
-    'icon'     :{"w":20,"h":20},
-    'taskInterval':70,
+    'font_m'   :{'attr':{"fill":"100-blue-darkblue", 'font-size':14, 'font-family':'MS UI Gothic'}},
+    'icon'     :{"w":20,"h":20, "margin":20},
+    'taskMargin':30,
     'taskR'    :10};
 
 $ (function() {
-
-
+    var objects = getObjects();
     var config = {'paper_id'   :'main_boad',
                   'server_host':'motoki.local',
                   'port'       :'8000',
-                  'objects'    :getObjects(),
+                  'objects'    :objects,
                   'visual'     :v};
 
     mediator = new ObjectMediator();
     mediator.setUp(config);
-
+    log(objects);
  });
 
 function log(msg)
@@ -57,6 +56,7 @@ function getObjects(){
 
     return  {
         'title'     :'このアプリ完成まで',
+        'goal_title':'Gridder完成/公開',
         '__id'      :'1',
         'tasks' :[{'__id' :'1-1',
                    'title':'大項目1',
@@ -73,14 +73,14 @@ function getObjects(){
 </script>
 </head>
 <body>
-<h2>Gridder</h2>
-
-<img width='20' height='20' src='/images/pencil.gif'/>
-<img width='20' height='20' src='/images/plus.png'/>
-<img width='20' height='20' src='/images/trash.jpg'/>
-
-<hr/>
-<div class='campus' id='main_boad'>
-</div>
+    <div class='header'>
+        <div class='title'><h2>Gridder</h2><input type='button' id='test'></div>
+        <div id='edit_box' class='edit_box'>
+            <div id='task_title'>-</div>
+            <hr/>
+            タイトル : <div id='task_'></div>
+        </div>
+    </div>
+<div class='campus' id='main_boad'></div>
 
 </body>
