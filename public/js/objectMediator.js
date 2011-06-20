@@ -5,11 +5,6 @@ TaskRenderer = function(config, raphael, mediator)
     this.v  = config.visual;
     this.raphael  = raphael;
     this.mediator = mediator;
-    this.shapes = {
-        'start_task' : [],
-        'tasks'      : [],
-        'end_task'   : []
-    };
 }
 TaskRenderer.prototype.renderStart = function(x){
 
@@ -29,20 +24,18 @@ TaskRenderer.prototype.renderStart = function(x){
 TaskRenderer.prototype.renderPath = function(x, mediator){
   var pathL_y = v.campus.margin.h + (v.rectStart.h / 2);
 
-  var a = this.raphael.path($.sprintf('"M %d %d  L 1000 %d',this.v.campus.margin.w, pathL_y, pathL_y)) 
+  return this.raphael.path($.sprintf('"M %d %d  L 1000 %d',this.v.campus.margin.w, pathL_y, pathL_y)) 
               .attr($.extend(this.v.pathL.attr,{'scale':0.1}))
               .animate({'scale':1}, 800)
-              .click(function(evt){mediator.onClickPath(evt)})
               .toBack();
-
 }
 
-TaskRenderer.prototype.renderGoal = function(x){
+TaskRenderer.prototype.renderGoal = function(x, task){
    var goal_rect  = this.raphael.rect(x, y = this.v.campus.margin.h, w = this.v.rectEnd.w, y2 = this.v.rectEnd.h, this.v.taskR)
                         .attr($.extend(this.v.rectEnd.attr, {'scale':0.1}))
                         .animate({'scale':1}, 700, 'bounce'),
        bBox       = goal_rect.getBBox(),
-       tx         = this.raphael.text(bBox.x, bBox.y, this.o.goal_title).
+       tx         = this.raphael.text(bBox.x, bBox.y, task.goal_title).
                     attr(this.v.font_m.attr);
 }
 
@@ -74,37 +67,38 @@ TaskRenderer.prototype.renderTask = function(x, task, mediator){
               .push(rc)
               .push(editImg)
               .push(addImg);
-
-  this.shapes.tasks.push(e);
-log(this.shapes);
-log(this.shapes.tasks.length);
+  return e;
 }
 
-TaskRenderer.prototype.renderAll = function(mediator){
-
-    var nextX = this.v.campus.margin.w;
-    this.mediator = mediator;
-
-    this.renderStart(nextX);
-
-    nextX += (this.v.rectStart.w + this.v.taskMargin);
-
-    for (var i=0; i < this.o.tasks.length; i++) { 
-        this.renderTask(nextX, this.o.tasks[i], mediator);
-        nextX += (this.v.rectL.w + this.v.taskMargin);
-    }
-
-    this.renderGoal(nextX);
-    this.renderPath(nextX, mediator);
-}
 ObjectMediator = function() {};
-ObjectMediator.prototype.setUp = function(config) {
+ObjectMediator.prototype.setUp = function(config, objects) {
    var socket       = new io.Socket(config.server_host,{port:config.port}),
-       raphael      = Raphael(document.getElementById(config.paper_id), config.visual.campus.w, config.visual.campus.h),
-       taskRenderer = new TaskRenderer(config, raphael, this);
-
+       v            = config.visual,
+       raphael      = Raphael(document.getElementById(config.paper_id),
+                      v.campus.w, v.campus.h);
+   this.taskRenderer = new TaskRenderer(config, raphael, this);
    this.config  = config;
-   taskRenderer.renderAll(this);
+   this.objects = objects;
+   this.shapes  = {'start_task' : [],
+                   'tasks'      : [],
+                   'end_task'   : []};
+   var mediator = this;
+
+   var nextX = v.campus.margin.w;
+
+   this.taskRenderer.renderStart(nextX);
+
+   nextX += (v.rectStart.w + v.taskMargin);
+
+   for (var i=0; i < objects.tasks.length; i++) {
+     this.shapes.tasks = pushArrayAt(this.shapes.tasks, i,
+                                     this.taskRenderer.renderTask(nextX, objects.tasks[i], this));
+     nextX += (v.rectL.w + v.taskMargin);
+   }
+   this.taskRenderer.renderGoal(nextX,objects);
+   var goal_task = this.taskRenderer.renderPath(nextX, mediator)
+                       .click(function(evt){mediator.onClickPath(evt)});
+
    return;
 };
 
@@ -115,18 +109,35 @@ ObjectMediator.prototype.onClickEditTask = function(task) {
 ObjectMediator.prototype.onClickAddTask = function(task) {
 
 }
+ObjectMediator.prototype.addTask = function(x)
+{
+  var num     = this.taskNumByPathX(x),
+      newTask = {title:'non title'},
+      v       = this.config.visual,
+      nextX   = v.campus.margin.w+(num * (v.rectL.w + v.taskMargin));
+
+  this.objects.tasks = pushArrayAt(this.objects.tasks, num, newTask);
+  this.shapes.tasks  = pushArrayAt(this.shapes.tasks, num,
+                                   this.taskRenderer.renderTask(nextX, newTask, this));
+  this.moveTaskShapesAt(num);
+}
+ObjectMediator.prototype.moveTaskShapesAt = function(num) 
+{
+  var tasks = this.shapes.tasks,
+      v     = this.config.visual;
+  if (0 < tasks.length) {
+    for (var i = num; i < tasks.length; i++) {
+      var x = tasks[i].getBBox().x;
+      tasks[i].animate({'x': x + v.rectL.w + v.taskMargin}, 200);
+    }
+  }
+}
 
 ObjectMediator.prototype.onClickPath = function(evt) {
-
-  var num = this.taskNumByPathX(evt.x);
-  this.config.objects.tasks = pushArrayAt(this.config.objects.tasks, num-1, {title:'non title'});
-
-  // 新タスクの描画
-
-  // 描画済みタスクの移動
+  this.addTask(evt.x);
 }
 ObjectMediator.prototype.taskNumByPathX = function(pathX) {
   // 計算式が適当なので詳細詰め
   var v = this.config.visual;
-  return parseInt(pathX / (v.taskMargin + v.rectL.w));
+  return parseInt(pathX / (v.taskMargin + v.rectL.w))-1;
 }

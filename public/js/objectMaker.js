@@ -36,10 +36,10 @@ ObjectMaker.factory = function (type, raphael, id, factory)
 }
 
 // 個別のコード
-ObjectMaker.Circle = function (raphael){
+ObjectMaker.Circle = function (raphael) {
   this.type = OBJECT_TYPE.CIRCLE;
   this.object = raphael.circle(x=50, y=50, r=40)
-    .attr({'gradient':'270-#9ACD32-#FFFF00'})
+      .attr({'gradient':'270-#9ACD32-#FFFF00'})
 
     var onDragStart = function(x, y, event)
     {
@@ -58,7 +58,6 @@ ObjectMaker.Circle = function (raphael){
     }
     this.attr({"cx":this.ox + x, "cy":this.oy + y})
   };
-
 
   var onDragEnd = function(event) {
     if (this.parent.isLocked()) {
@@ -85,10 +84,8 @@ ObjectMaker.Path = function (raphael){
       return;
     }
     var opath = this.attr().path;
-
     this.ox = 0;
     this.oy = 0;
-
     this.attr({opacity:'0.4'});
     this.mediator.onObjectDragStart(this.id);
   }
@@ -102,7 +99,6 @@ ObjectMaker.Path = function (raphael){
     if (this.parent.isLocked()) {
       return;
     }
-
     var attr = {path : this.attr().path};
     this.mediator.onObjectDragEnd(this.id, attr);
     this.attr({opacity:'1.0'});

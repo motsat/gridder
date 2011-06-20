@@ -24,7 +24,6 @@ function pushArrayAt(srcArray, atNum, pushVal)
 
   if (srcArray.length == atNum) {
       srcArray.push(pushVal);
-      console.log('just');
       return srcArray;
   }
   if (atNum == 0){ 
