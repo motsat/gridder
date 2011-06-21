@@ -61,7 +61,8 @@ TaskRenderer.prototype.renderTask = function(x, task, mediator){
   var showIcons = function(){editImg.show();addImg.show();},
       hideIcons = function(){editImg.hide();addImg.hide();};
 
-  return this.raphael.set().push(rc, editImg, addImg);
+  var s =  this.raphael.set().push(rc, editImg, addImg);
+  return s;
 }
 
 ObjectMediator = function() {};
@@ -124,8 +125,11 @@ ObjectMediator.prototype.moveTaskShapesAt = function(num)
       v     = this.config.visual;
   if (0 < tasks.length) {
     for (var i = num; i < tasks.length; i++) {
-      var x = tasks[i].getBBox().x;
-      tasks[i].animate({'x': x + v.rectL.w + v.taskMargin}, 500);
+      for (var n = 0;n <  tasks[i].items.length; n++){
+        var item  = tasks[i].items[n];
+        var x = item.getBBox().x;
+        item.animate({'x': x + v.rectL.w + v.taskMargin}, 500);
+      }
     }
   }
 }
