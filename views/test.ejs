@@ -1,21 +1,25 @@
 <html>
 <head>
 <link rel=Stylesheet href="/css/main.css">
-<link rel=Stylesheet href="/css/thickbox.css">
+<link rel=Stylesheet href="/css/ui-lightness/jquery-ui-1.8.13.custom.css">
 <script src="/js/socket.io.js"></script>
 <script src="/js/json2.js"></script>
 <script src="/js/util.js"></script>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js"></script>
-<script src="/js/thickbox.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/jquery-ui.min.js"></script>
 <script src="/js/sprintf.js"></script>
 
 <script type='text/javascript'>
 $ (function() {
- });
-
+        $('#age').bind('click',
+            function() {$('#moge').dialog({ draggable: true });});
+        });
 </script>
 </head>
 <body>
-    <a href="/edit?keepThis=true&TB_iframe=true&height=250&width=400" class="thickbox" title="説明文（なくても大丈夫です）">aa</a>
+    <div id='age'>div</div>
+    <div id='moge'></div>
+    <div alt='/edit?aa' class='thickbox'>div</div>
+    <a href='/edit?a' class='thickbox'>a</a>
     edit
 </body>

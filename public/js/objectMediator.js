@@ -8,16 +8,13 @@ TaskRenderer = function(config, raphael, mediator)
 }
 TaskRenderer.prototype.renderStart = function(x){
 
-  var start_rect = this.raphael.rect(x, y=this.v.paper.margin.h, w= this.v.rectStart.w, 
-                                     y2= this.v.rectStart.h, this.v.taskR)
+  var start_rect = this.raphael.rect(x, y = this.v.paper.margin.h, w = this.v.rectStart.w, 
+                                     y2 = this.v.rectStart.h, this.v.taskR)
                                 .attr($.extend(this.v.rectStart.attr, {'scale':0.1}))
                                 .animate({'scale':1}, 700, 'bounce');
-
-  start_rect.click(this.mediator.onTaskClick);
-
-  var bBox  = start_rect.getBBox(),
-      tx    = this.raphael.text(bBox.x, bBox.y, 'スタート').
-              attr(this.v.font_m.attr);
+      var tx = this.raphael.text(x + this.v.font_m.padding_rect.x, 
+                                 y + this.v.font_m.padding_rect.y, 'スタート').
+                                 attr(this.v.font_m.attr);
 }
 
 
@@ -30,13 +27,14 @@ TaskRenderer.prototype.renderPath = function(x, mediator){
               .toBack();
 }
 
-TaskRenderer.prototype.renderGoal = function(x, task){
-   var goal_rect  = this.raphael.rect(x, y = this.v.paper.margin.h, w = this.v.rectEnd.w, y2 = this.v.rectEnd.h, this.v.taskR)
-                        .attr($.extend(this.v.rectEnd.attr, {'scale':0.1}))
-                        .animate({'scale':1}, 700, 'bounce'),
-       bBox       = goal_rect.getBBox(),
-       tx         = this.raphael.text(bBox.x, bBox.y, task.goal_title).
-                    attr(this.v.font_m.attr);
+TaskRenderer.prototype.renderEnd = function(x, task){
+   var end_rect  = this.raphael.rect(x, y = this.v.paper.margin.h, w = this.v.rectEnd.w, y2 = this.v.rectEnd.h, this.v.taskR)
+                       .attr($.extend(this.v.rectEnd.attr, {'scale':0.1}))
+                       .animate({'scale':1}, 700, 'bounce'),
+       tx        = this.raphael.text(x + this.v.font_m.padding_rect.x,
+                                     y + this.v.font_m.padding_rect.y, task.end_title). 
+                                     attr(this.v.font_m.attr);
+      return this.raphael.set().push(end_rect, tx);
 }
 
 TaskRenderer.prototype.renderTask = function(x, task, mediator){
@@ -45,7 +43,6 @@ TaskRenderer.prototype.renderTask = function(x, task, mediator){
                .animate({'scale':1}, 700, 'bounce')
                .mouseover(function() {showIcons()})
                .mouseout(function() {hideIcons()});
-
   var editImg = this.raphael.image('/images/pencil.gif', x, y =  v.paper.margin.h, w = v.icon.w, h = v.icon.h)
           .hide()
           .mouseover(function() {showIcons()})
@@ -57,14 +54,22 @@ TaskRenderer.prototype.renderTask = function(x, task, mediator){
           .mouseover(function() {showIcons()})
           .mouseout(function() {hideIcons()})
           .click(function() {mediator.onClickAddTask(task)});
+  var tx = this.raphael.text(x + this.v.font_m.padding_rect.x,
+                             y + this.v.font_m.padding_rect.y, task.title). 
+                            attr(this.v.font_m.attr)
+                            .click(function(){showEditBox()});
 
-  var showIcons = function(){editImg.show();addImg.show();},
-      hideIcons = function(){editImg.hide();addImg.hide();};
-
-  var s =  this.raphael.set().push(rc, editImg, addImg);
+  var showIcons   = function() {editImg.show();addImg.show();},
+      hideIcons   = function() {editImg.hide();addImg.hide();},
+      showEditBox = function() {
+            log($('#task_title'));
+            $('#task_title').val(task.title);
+            $('#task_id').val(task.__id);
+            $('#editbox').dialog({ draggable: true });
+      };
+  var s = this.raphael.set().push(rc, editImg, addImg,tx);
   return s;
 }
-
 ObjectMediator = function() {};
 ObjectMediator.prototype.setUp = function(config, objects) {
    var socket       = new io.Socket(config.server_host,{port:config.port}),
@@ -90,15 +95,19 @@ ObjectMediator.prototype.setUp = function(config, objects) {
                                      this.taskRenderer.renderTask(nextX, objects.tasks[i], this));
      nextX += (v.rectL.w + v.taskMargin);
    }
-   this.taskRenderer.renderGoal(nextX,objects);
-   var goal_task = this.taskRenderer.renderPath(nextX, mediator)
-                       .click(function(evt){mediator.onClickPath(evt)});
+   this.shapes.end_task = this.taskRenderer.renderEnd(nextX,objects);
+   this.taskRenderer.renderPath(nextX, mediator)
+                    .click(function(evt){mediator.onClickPath(evt)});
 
-   return;
+   
+  // setup editBox
+  var onEnterKeyDown = function (key){log(key)};
+  $('task_title').keydown(onEnterKeyDown);
+  $('task_detail').keydown(onEnterKeyDown);
 };
 
 ObjectMediator.prototype.onClickEditTask = function(task) {
-    $("div#task_title").text(task.title);
+    //$("div#task_title").text(task.title);
 }
 
 ObjectMediator.prototype.onClickAddTask = function(task) {
@@ -119,19 +128,29 @@ ObjectMediator.prototype.addTask = function(x)
   this.shapes.tasks  = pushArrayAt(this.shapes.tasks, num, taskShape);
   this.moveTaskShapesAt(num + 1); // 追加分以降のものを移動
 }
+
+ObjectMediator.prototype.moveRaphaelSets = function(sets, x) {
+
+  for (var n = 0;n <  sets.items.length; n++){
+    var item  = sets.items[n];
+    var x = item.getBBox().x;
+    item.animate({'x': x + v.rectL.w + v.taskMargin}, 500);
+  }
+
+}
 ObjectMediator.prototype.moveTaskShapesAt = function(num) 
 {
   var tasks = this.shapes.tasks,
       v     = this.config.visual;
+
+  this.moveRaphaelSets(this.shapes.end_task, v.rectL.w + v.taskMargin );
+
   if (0 < tasks.length) {
     for (var i = num; i < tasks.length; i++) {
-      for (var n = 0;n <  tasks[i].items.length; n++){
-        var item  = tasks[i].items[n];
-        var x = item.getBBox().x;
-        item.animate({'x': x + v.rectL.w + v.taskMargin}, 500);
-      }
+      this.moveRaphaelSets(tasks[i], v.rectL.w + v.taskMargin );
     }
   }
+
 }
 
 ObjectMediator.prototype.onClickPath = function(evt) {

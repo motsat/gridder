@@ -83,7 +83,13 @@ app.configure(function() {
        .set("view options", { layout: false })
        .get('/', function(req, res) {
          res.render('index.ejs');
-       });
+       })
+       .get('/edit', function(req, res) {
+         res.render('edit.ejs');
+       })
+       .get('/test', function(req, res) {
+         res.render('test.ejs');
+       })
 });
 
 app.listen(8000);
