@@ -27,7 +27,8 @@ var v = {'paper'     :{'w':1000, 'h':250,'margin':{'w':30,'h':10}},
          'rectEnd'   :{'w':100, 'h':40,
                        'attr':{"stroke":"gray", "stroke-width":1, "gradient":'100-#FF82AB-#FFAEB9'}},
          'rectMOn'   :{'attr':{"stroke":"crimson" , "scale":1.5}},
-         'font_m'    :{'attr':{"fill":"100-blue-darkblue", 'font-size':14, 'font-family':'MS UI Gothic'}},
+         'font_m'    :{'padding_rect':{x:20,y:20},
+                     'attr':{'text-anchor': 'start',"fill":"100-blue-darkblue", 'font-size':16, 'font-family':'MS UI Gothic'}},
          'icon'      :{"w":20,"h":20, "margin":20},
          'taskMargin':30,
          'taskR'     :10};
@@ -70,7 +71,7 @@ function getObjects(){
 </head>
 <body>
     <div class='header'>
-        <div class='title'><h2>Gridder</h2><input type='button' id='test'></div>
+        <div class='title'><img width='50%' height='50%' src='/images/Grits.png'></div>
         <div id='edit_box' class='edit_box'>
             <div id='task_title'>-</div>
             <hr/>
