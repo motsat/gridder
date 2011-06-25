@@ -35,3 +35,9 @@ function pushArrayAt(srcArray, atNum, pushVal)
   newAr = newAr.concat(srcArray.slice(atNum));
   return newAr;
 }
+function log(msg)
+{
+    if (typeof console == 'object') {
+        console.log(msg);
+    }
+}

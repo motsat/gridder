@@ -1,7 +1,8 @@
 <html>
 <head>
-<link rel=Stylesheet href="/css/main.css">
-<link rel=Stylesheet href="/css/ui-lightness/jquery-ui-1.8.13.custom.css">
+<link rel='stylesheet' href="/css/main.css">
+<link rel='stylesheet' href="/css/ui-lightness/jquery-ui-1.8.13.custom.css">
+<title>Grits</title>
 <script src="/js/socket.io.js"></script>
 <script src="/js/json2.js"></script>
 <script src="/js/raphael.js"></script>
@@ -17,7 +18,7 @@
 <script type='text/javascript'>
 var start_rect;
 var v = {'paper'     :{'w':1000, 'h':250,'margin':{'w':30,'h':10}},
-         'pathL'     :{'attr':{"stroke":"#999999", "stroke-width":4, opacity:1.0}},
+         'pathL'     :{'attr':{"stroke":"#999999", "stroke-width":7, opacity:1.0}},
          'pathM'     :{},
          'rectStart' :{'w':100, 'h':40,
              'attr':{"stroke":"orange", "stroke-width":1, "gradient":'100-#FFCD35-#FFD659'}},
@@ -30,7 +31,7 @@ var v = {'paper'     :{'w':1000, 'h':250,'margin':{'w':30,'h':10}},
                        'attr':{"stroke":"orange", "stroke-width":1, "gradient":'100-#FFCD35-#FFD659'}},
          'rectMOn'   :{'attr':{"stroke":"crimson" , "scale":1.5}},
          'font_m'    :{'padding_rect':{x:10,y:20},
-                     'attr':{'text-anchor': 'start',"fill":"#333333", 'font-size':17, 'font-family':'MS UI Gothic'}},
+                     'attr':{'text-anchor': 'start',"fill":"#333333",'font-size':17, 'font-family':''}},
          'icon'      :{"w":20,"h":20, "margin":20},
          'taskMargin':30,
          'taskR'     :10};
@@ -44,16 +45,6 @@ $ (function() {
     mediator = new ObjectMediator();
     mediator.setUp(config, getObjects());
  });
-function onEnter()
-{
-alert(1);
-}
-function log(msg)
-{
-    if (typeof console == 'object') {
-        console.log(msg);
-    }
-}
 function getObjects(){
 
     return  {
@@ -61,7 +52,8 @@ function getObjects(){
         'end_title':'Gridder公開',
         '__id'      :'1',
         'tasks' :[{'__id' :'1-1',
-                   'title':'大項目1',
+                   'title':'設計',
+                   'description':'・デザイン\n・プロトタイプ\n',
                    'tasks':[]},
                   {'__id' :'1-2',
                    'title':'大項目2',
@@ -77,20 +69,15 @@ function getObjects(){
 <body>
     <div class='header'>
         <div class='title'><img width='50%' height='50%' src='/images/Grits.png'></div>
-        <div id='edit_box' class='edit_box'>
-            <div id=''>-</div>
-            <hr/>
-            タイトル : <div id='task_'></div>
-        </div>
     </div>
 <div class='campus' id='main_boad'></div>
-<div  id='editbox'>
-    <form id='editform'>
+<div id='editbox'>
+    <form onSubmit='return false;' id='editform'>
         title <br/><input id='task_title' value='' type='text'><br/>
-        詳細<br/><textarea id='task_detail' type='text'></textarea><br/>
+        詳細<br/><textarea id='task_description' type='text'></textarea><br/>
         終了日<br/>2011-11-11 11:10
-        <input id='task_id' value='' type='hidden'>
-    <input id='edit_complete' type='button'><br/>
+        <input id='task_id' value='' type='hidden'><br/>
+        <input id='edit_complete' value='保存' type='button'><br/>
     </form>
 </div>
 

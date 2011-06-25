@@ -11,8 +11,8 @@ TaskRenderer.prototype.renderStart = function(x){
   var start_rect = this.raphael.rect(x, y = this.v.paper.margin.h, w = this.v.rectStart.w, 
                                      y2 = this.v.rectStart.h, this.v.taskR)
                                 .attr($.extend(this.v.rectStart.attr, {'scale':0.1}))
-                                .animate({'scale':1}, 700, 'bounce');
-      var tx = this.raphael.text(x + this.v.font_m.padding_rect.x, 
+                                .animate({'scale':1}, 700, 'bounce'),
+      tx         = this.raphael.text(x + this.v.font_m.padding_rect.x, 
                                  y + this.v.font_m.padding_rect.y, 'スタート').
                                  attr(this.v.font_m.attr);
 }
@@ -43,30 +43,31 @@ TaskRenderer.prototype.renderTask = function(x, task, mediator){
                .animate({'scale':1}, 700, 'bounce')
                .mouseover(function() {showIcons()})
                .mouseout(function() {hideIcons()});
-  var editImg = this.raphael.image('/images/pencil.gif', x, y =  v.paper.margin.h, w = v.icon.w, h = v.icon.h)
-          .hide()
-          .mouseover(function() {showIcons()})
-          .mouseout(function() {hideIcons()})
-          .click(function() {mediator.onClickEditTask(task)});
+  var editImg = this.raphael.image('/images/pencil.gif', x, y =  v.paper.margin.h, w = v.icon.w, h = v.icon.h);
+  var addImg  = this.raphael.image('/images/plus.png', x + v.icon.margin , y =  v.paper.margin.h, w = v.icon.w, h = v.icon.h);
 
-  var addImg = this.raphael.image('/images/plus.png', x + v.icon.margin , y =  v.paper.margin.h, w = v.icon.w, h = v.icon.h)
-          .hide()
-          .mouseover(function() {showIcons()})
-          .mouseout(function() {hideIcons()})
-          .click(function() {mediator.onClickAddTask(task)});
+  $.each([editImg, addImg], function (i,el){
+      el.hide()
+        .mouseover(function() {showIcons()})
+        .mouseout(function() {hideIcons()})
+        .click(function() {mediator.onClickAddTask(task)});
+  });
+
   var tx = this.raphael.text(x + this.v.font_m.padding_rect.x,
-                             y + this.v.font_m.padding_rect.y, task.title). 
-                            attr(this.v.font_m.attr)
+                             y + this.v.font_m.padding_rect.y, task.title)
+                            .attr(this.v.font_m.attr)
                             .click(function(){showEditBox()});
 
   var showIcons   = function() {editImg.show();addImg.show();},
       hideIcons   = function() {editImg.hide();addImg.hide();},
       showEditBox = function() {
-            log($('#task_title'));
+            mediator.editingTask = {task:task, shapes:{text:tx, rect:rc}};
             $('#task_title').val(task.title);
+            $('#task_description').val(task.description);
             $('#task_id').val(task.__id);
             $('#editbox').dialog({ draggable: true });
       };
+
   var s = this.raphael.set().push(rc, editImg, addImg,tx);
   return s;
 }
@@ -76,15 +77,17 @@ ObjectMediator.prototype.setUp = function(config, objects) {
        v            = config.visual,
        raphael      = Raphael(document.getElementById(config.paper_id),
                       v.paper.w, v.paper.h);
-   this.taskRenderer = new TaskRenderer(config, raphael, this);
-   this.config  = config;
-   this.objects = objects;
-   this.shapes  = {'start_task' : [],
-                   'tasks'      : [],
-                   'end_task'   : []};
-   var mediator = this;
 
-   var nextX = v.paper.margin.w;
+   this.taskRenderer = new TaskRenderer(config, raphael, this);
+   this.config       = config;
+   this.objects      = objects;
+   this.shapes       = {'start_task' : [],
+                        'tasks'      : [],
+                        'end_task'   : []};
+   var mediator = this,
+       nextX    = v.paper.margin.w;
+
+   this.editingTask = {task:null, shapes:null};
 
    this.taskRenderer.renderStart(nextX);
 
@@ -98,12 +101,21 @@ ObjectMediator.prototype.setUp = function(config, objects) {
    this.shapes.end_task = this.taskRenderer.renderEnd(nextX,objects);
    this.taskRenderer.renderPath(nextX, mediator)
                     .click(function(evt){mediator.onClickPath(evt)});
-
-   
+   var saveEditBox = function () {
+     $('#editbox').dialog('close');
+   };
   // setup editBox
-  var onEnterKeyDown = function (key){log(key)};
-  $('task_title').keydown(onEnterKeyDown);
-  $('task_detail').keydown(onEnterKeyDown);
+  var onEnterKeyDown = function (evt){
+      if (evt.keyCode =='13') {
+        for (var i in mediator.editingTask.shapes.text){
+          log(i);
+        }
+        saveEditBox();
+      }
+  };
+  $('#edit_complete').click(saveEditBox);
+  $('#task_title').keydown(onEnterKeyDown);
+  $('#editbox').hide();
 };
 
 ObjectMediator.prototype.onClickEditTask = function(task) {
@@ -145,12 +157,13 @@ ObjectMediator.prototype.moveTaskShapesAt = function(num)
 
   this.moveRaphaelSets(this.shapes.end_task, v.rectL.w + v.taskMargin );
 
-  if (0 < tasks.length) {
-    for (var i = num; i < tasks.length; i++) {
-      this.moveRaphaelSets(tasks[i], v.rectL.w + v.taskMargin );
-    }
+  if (tasks.length <= 0 ) {
+    return;
   }
 
+  for (var i = num; i < tasks.length; i++) {
+    this.moveRaphaelSets(tasks[i], v.rectL.w + v.taskMargin );
+  }
 }
 
 ObjectMediator.prototype.onClickPath = function(evt) {
