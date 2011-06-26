@@ -26,10 +26,10 @@ ObjectMaker.factory = function (type, raphael, id, factory)
   var newObject = new ObjectMaker[type](raphael);
 
   // 全Objectで共通の処理
-  newObject.status        = OBJECT_STATUS.NONE;
-  newObject.id            = id;
-  newObject.object.id     = id; // drag処理のためのID
-  newObject.object.parent = newObject; // dragだとraphaelがthisになるので対策
+  newObject.status          = OBJECT_STATUS.NONE;
+  newObject.id              = id;
+  newObject.object.id       = id; // drag処理のためのID
+  newObject.object.parent   = newObject; // dragだとraphaelがthisになるので対策
   newObject.object.mediator = mediator;
 
   return newObject;
