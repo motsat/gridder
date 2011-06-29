@@ -29,21 +29,21 @@ TaskRenderer.prototype.renderEnd = function(x, task){
    return this.renderTaskBase(task.end_title, x, y = v.paper.margin.h, v.rectEnd.attr);
 }
 TaskRenderer.prototype.renderTask = function(x, y, task, mediator){
-  var s  = this.renderTaskBase(task.title,x, y, v.rectL.attr)
-           .click(function(){showEditBox()});
-  var addImg = this.raphael.image('/images/plus.png', x , v.rectL.h, w = v.icon.w, h = v.icon.h)
-               .click(function() {mediator.addChildTask(task)});
+  var s      = this.renderTaskBase(task.title,x, y, v.rectL.attr)
+               .click(function(){showEditBox()}),
+      addImg = this.raphael.image('/images/plus.png', x , v.rectL.h, w = v.icon.w, h = v.icon.h)
+               .click(function() {mediator.addChildTask(task, s)});
 
   s.push(addImg);
 
   var showIcons   = function() {addImg.show();},
       hideIcons   = function() {addImg.hide();},
       showEditBox = function() {
-            mediator.editingTask = {task:task, shapes:s};
-            $('#task_id').val(task.__id);
-            $('#task_title').val(task.title);
-            $('#task_description').val(task.description);
-            $('#editbox').dialog( { draggable: true });
+        mediator.editingTask = {task:task, shapes:s};
+        $('#task_id').val(task.__id);
+        $('#task_title').val(task.title);
+        $('#task_description').val(task.description);
+        $('#editbox').dialog( { draggable: true });
       };
   return s;
 }
@@ -78,12 +78,12 @@ ObjectMediator.prototype.setUp = function(config, objects) {
 
    this.taskRenderer.renderStart(nextX);
 
-   nextX += (v.rectStart.w + v.taskMargin);
+   nextX += (v.rectStart.w + v.taskMargin.w);
 
    for (var i=0; i < objects.tasks.length; i++) {
      this.shapes.tasks = pushArrayAt(this.shapes.tasks, i,
                                      this.taskRenderer.renderTask(nextX, v.paper.margin.h, objects.tasks[i], this));
-     nextX += (v.rectL.w + v.taskMargin);
+     nextX += (v.rectL.w + v.taskMargin.w);
    }
    this.shapes.end_task = this.taskRenderer.renderEnd(nextX,objects);
    this.taskRenderer.renderPath(nextX, mediator)
@@ -108,42 +108,43 @@ ObjectMediator.prototype.setUp = function(config, objects) {
   $('#editbox').hide();
 };
 
-ObjectMediator.prototype.addChildTask = function(task) 
+ObjectMediator.prototype.addChildTask = function(task, shapes)
 {
   var v               = this.config.visual,
-      //num             = this.taskNumByPathX(x),
       newTask         = {title:'non title(child)'},
-      startTaskMargin = v.rectStart.w + v.taskMargin,
-      //nextX           = v.paper.margin.w + startTaskMargin + (num * (v.rectL.w + v.taskMargin)),
-      nextX           = 160,
-      taskShape       = this.taskRenderer.renderTask(nextX, v.paper.margin.h*2 + v.rectL.h, newTask, this);
+      startTaskMargin = v.rectStart.w + v.taskMargin.w,
+      x               = shapes.getBBox().x,
+      y               = shapes.getBBox().y + v.rectL.h + v.taskMargin.h,
+      taskShape       = this.taskRenderer.renderTask(x, y, newTask, this);
 
   task.tasks.push(newTask);
-  log(task);
   // this.moveTaskShapesAt(num + 1); // 追加分以降のものを移動
 
 }
-ObjectMediator.prototype.addTask = function(x)
+ObjectMediator.prototype.addParentTask = function(x)
 {
   var v               = this.config.visual,
-      num             = this.taskNumByPathX(x),
+      num             = this.taskNumAtPathX(x),
       newTask         = {title:'non title'},
-      startTaskMargin = v.rectStart.w + v.taskMargin,
-      nextX           = v.paper.margin.w + startTaskMargin + (num * (v.rectL.w + v.taskMargin)),
-      taskShape       = this.taskRenderer.renderTask(nextX, v.paper.margin.h, newTask, this);
-
+      taskShape       = this.taskRenderer.renderTask(this.calculateTaskX(num) , v.paper.margin.h, newTask, this);
   this.objects.tasks  = pushArrayAt(this.objects.tasks, num, newTask);
-  this.shapes.tasks   = pushArrayAt(this.shapes.tasks, num, taskShape);
+  this.shapes.tasks   = pushArrayAt(this.shapes.tasks,  num, taskShape);
 
   this.moveTaskShapesAt(num + 1); // 追加分以降のものを移動
 }
+ObjectMediator.prototype.calculateTaskX = function(num)
+{
+  var v               = this.config.visual,
+      startTaskMargin = v.rectStart.w + v.taskMargin.w;
+  return v.paper.margin.w + startTaskMargin + (num * (v.rectL.w + v.taskMargin.w));
 
+}
 ObjectMediator.prototype.moveRaphaelSets = function(sets, x) {
 
   for (var n = 0; n < sets.items.length; n++){
     var item  = sets.items[n];
     var x = item.getBBox().x;
-    item.animate( {'x': x + v.rectL.w + v.taskMargin}, 500);
+    item.animate( {'x': x + v.rectL.w + v.taskMargin.w}, 500);
   }
 
 }
@@ -153,22 +154,22 @@ ObjectMediator.prototype.moveTaskShapesAt = function(num)
   var tasks = this.shapes.tasks,
       v     = this.config.visual;
 
-  this.moveRaphaelSets(this.shapes.end_task, v.rectL.w + v.taskMargin );
+  this.moveRaphaelSets(this.shapes.end_task, v.rectL.w + v.taskMargin.w );
 
   if (tasks.length <= 0 ) {
     return;
   }
 
   for (var i = num; i < tasks.length; i++) {
-    this.moveRaphaelSets(tasks[i], v.rectL.w + v.taskMargin );
+    this.moveRaphaelSets(tasks[i], v.rectL.w + v.taskMargin.w );
   }
 }
 
 ObjectMediator.prototype.onClickPath = function(evt) {
-  this.addTask(evt.x);
+  this.addParentTask(evt.x);
 }
-ObjectMediator.prototype.taskNumByPathX = function(pathX) {
+ObjectMediator.prototype.taskNumAtPathX = function(pathX) {
   // 計算式が適当なので詳細詰め
   var v = this.config.visual;
-  return parseInt(pathX / (v.taskMargin + v.rectL.w))-1;
+  return parseInt(pathX / (v.taskMargin.w + v.rectL.w))-1;
 }
