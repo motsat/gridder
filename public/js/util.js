@@ -24,16 +24,18 @@ function pushArrayAt(srcArray, atNum, pushVal)
 
   if (srcArray.length == atNum) {
       srcArray.push(pushVal);
-      return srcArray;
+      return;
   }
   if (atNum == 0){ 
-    return [pushVal].concat(srcArray);
+    srcArray.unshift(pushVal);
+    return;
   }
 
-  var newAr = srcArray.slice(0, atNum);
-  newAr.push(pushVal);
-  newAr = newAr.concat(srcArray.slice(atNum));
-  return newAr;
+  var frontArr = srcArray.slice(0, atNum);
+      frontArr.push(pushVal);
+  var backArr = srcArray.slice(atNum);
+
+  Array.prototype.splice.apply(srcArray, [0, srcArray.length].concat(frontArr.concat(backArr)));
 }
 function log(msg)
 {

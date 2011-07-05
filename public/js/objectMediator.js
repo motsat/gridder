@@ -30,14 +30,16 @@ TaskRenderer.prototype.renderTaskBase = function(str, x, y, attr, editOptions)
    return s;
 
 }
-TaskRenderer.prototype.renderStart = function(x){
+TaskRenderer.prototype.renderStart = function(x) {
    var v = this.v;
    return this.renderTaskBase('スタート' , x, y = v.paper.margin.h, v.rectStart.attr);
 }
-TaskRenderer.prototype.renderEnd = function(x, task){
+
+TaskRenderer.prototype.renderEnd = function(x, task) {
    var v = this.v;
    return this.renderTaskBase(task.end_title, x, y = v.paper.margin.h, v.rectEnd.attr);
 }
+
 TaskRenderer.prototype.renderTaskParent = function(x, y, task, mediator, openOnCraeted){
   var s      = this.renderTaskBase(task.title, x, y, v.rectP.attr, {openOnCraeted:openOnCraeted, task:task}),
       addImg = this.raphael.image('/images/plus.png', x , y + (v.rectP.h / 2)+10, w = v.icon.w, h = v.icon.h)
@@ -50,6 +52,7 @@ TaskRenderer.prototype.renderTaskParent = function(x, y, task, mediator, openOnC
       hideIcons   = function() {addImg.hide();};
   return s;
 }
+
 TaskRenderer.prototype.renderTaskChild = function(x, y, task, mediator){
   var s      = this.renderTaskBase(task.title, x, y, v.rectC.attr, {openOnCraeted:true, task:task}),
       p      = this.raphael.path($.sprintf('"M %d %d  L %d %d', x, y - v.taskMargin.child.h,  x, y + v.rectC.h)) 
@@ -59,7 +62,6 @@ TaskRenderer.prototype.renderTaskChild = function(x, y, task, mediator){
   s.click(function(){mediator.showEditBox(task, s)});
   return s;
 }
-
 
 TaskRenderer.prototype.renderPath = function(x, mediator){
   var pathL_y = v.paper.margin.h + (v.rectStart.h / 2);
@@ -92,11 +94,13 @@ ObjectMediator.prototype.setUp = function(config, objects) {
    this.taskRenderer.renderStart(nextX);
 
    nextX += (v.rectStart.w + v.taskMargin.w);
+   var sets = [];
    for (var i=0; i < objects.tasks.length; i++) {
-     this.shapes.tasks = pushArrayAt(this.shapes.tasks, i,
-                                     this.taskRenderer.renderTaskParent(nextX, v.paper.margin.h, objects.tasks[i], this, false));
+     sets[i] = this.taskRenderer.renderTaskParent(nextX, v.paper.margin.h, objects.tasks[i], this, false)     ;
+     pushArrayAt(this.shapes.tasks, i, {parent:sets[i]});
      nextX += (v.rectP.w + v.taskMargin.w);
    }
+
    this.shapes.end_task = this.taskRenderer.renderEnd(nextX,objects);
    this.taskRenderer.renderPath(nextX, mediator)
                     .click(function(evt){mediator.onClickPath(evt)});
@@ -137,9 +141,10 @@ ObjectMediator.prototype.addParentTask = function(x)
       num             = this.taskNumAtPathX(x),
       newTask         = {title:'non title', tasks:[]},
       taskShape       = this.taskRenderer.renderTaskParent(this.calculateTaskX(num) , v.paper.margin.h, newTask, this, true);
-  this.objects.tasks  = pushArrayAt(this.objects.tasks, num, newTask);
-  this.shapes.tasks   = pushArrayAt(this.shapes.tasks,  num, taskShape);
-
+  //this.objects.tasks  = pushArrayAt(this.objects.tasks, num, newTask);
+  //this.shapes.tasks   = pushArrayAt(this.shapes.tasks,  num, taskShape);
+  pushArrayAt(this.objects.tasks, num, newTask);
+  pushArrayAt(this.shapes.tasks,  num, {parent:taskShape});
   this.moveTaskShapesAt(num + 1); // 追加分以降のものを移動
 }
 ObjectMediator.prototype.calculateTaskX = function(num)
@@ -163,7 +168,6 @@ ObjectMediator.prototype.moveTaskShapesAt = function(num)
 {
   var tasks = this.shapes.tasks,
       v     = this.config.visual;
-
   this.moveRaphaelSets(this.shapes.end_task, v.rectP.w + v.taskMargin.w );
 
   if (tasks.length <= 0 ) {
@@ -171,7 +175,7 @@ ObjectMediator.prototype.moveTaskShapesAt = function(num)
   }
 
   for (var i = num; i < tasks.length; i++) {
-    this.moveRaphaelSets(tasks[i], v.rectP.w + v.taskMargin.w );
+    this.moveRaphaelSets(tasks[i].parent, v.rectP.w + v.taskMargin.w );
   }
 }
 
