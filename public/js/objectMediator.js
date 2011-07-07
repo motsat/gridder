@@ -59,6 +59,7 @@ TaskRenderer.prototype.renderTaskChild = function(x, y, task, mediator){
                    .attr($.extend(this.v.pathL.attr,{'scale':0.1}))
                    .animate( {'scale':1}, 100)
                    .toBack();
+  s.push(p);
   s.click(function(){mediator.showEditBox(task, s)});
   return s;
 }
@@ -97,7 +98,7 @@ ObjectMediator.prototype.setUp = function(config, objects) {
    var sets = [];
    for (var i=0; i < objects.tasks.length; i++) {
      sets[i] = this.taskRenderer.renderTaskParent(nextX, v.paper.margin.h, objects.tasks[i], this, false)     ;
-     pushArrayAt(this.shapes.tasks, i, {parent:sets[i]});
+     pushArrayAt(this.shapes.tasks, i, {parent:sets[i], childs:[]});
      nextX += (v.rectP.w + v.taskMargin.w);
    }
 
@@ -134,6 +135,8 @@ ObjectMediator.prototype.addChildTask = function(task, shapes)
       taskShape       = this.taskRenderer.renderTaskChild(x,y, newTask, this);
 
   task.tasks.push(newTask);
+  var order = this.orderOfParentTask(task);
+  this.shapes.tasks[order].childs.push(taskShape);
 }
 ObjectMediator.prototype.addParentTask = function(x)
 {
@@ -144,7 +147,7 @@ ObjectMediator.prototype.addParentTask = function(x)
   //this.objects.tasks  = pushArrayAt(this.objects.tasks, num, newTask);
   //this.shapes.tasks   = pushArrayAt(this.shapes.tasks,  num, taskShape);
   pushArrayAt(this.objects.tasks, num, newTask);
-  pushArrayAt(this.shapes.tasks,  num, {parent:taskShape});
+  pushArrayAt(this.shapes.tasks,  num, {parent:taskShape, childs:[]});
   this.moveTaskShapesAt(num + 1); // 追加分以降のものを移動
 }
 ObjectMediator.prototype.calculateTaskX = function(num)
@@ -158,6 +161,13 @@ ObjectMediator.prototype.moveRaphaelSets = function(sets, x) {
 
   for (var n = 0; n < sets.items.length; n++){
     var item  = sets.items[n];
+    if (item.type == 'path') {
+      path = $.extend(true, [], item.attr('path')); // deep copy
+      path[0][1] += v.rectP.w + v.taskMargin.w;
+      path[1][1] += v.rectP.w + v.taskMargin.w;
+
+     item.animate({'path':pathToString(path)}, 500);
+    }
     var x = item.getBBox().x;
     item.animate( {'x': x + v.rectP.w + v.taskMargin.w}, 500);
   }
@@ -176,6 +186,14 @@ ObjectMediator.prototype.moveTaskShapesAt = function(num)
 
   for (var i = num; i < tasks.length; i++) {
     this.moveRaphaelSets(tasks[i].parent, v.rectP.w + v.taskMargin.w );
+    if (0 < tasks[i].childs.length){
+      var childs = tasks[i].childs;
+      log(1);
+      for (var z = 0; z < childs.length; z++) {
+      log(2);
+        this.moveRaphaelSets(childs[z], v.rectP.w + v.taskMargin.w );
+      }
+    }
   }
 }
 
@@ -195,4 +213,11 @@ ObjectMediator.prototype.showEditBox = function(task, shapes) {
   $('#task_description').val(task.description);
   $('#editbox').dialog( { draggable: true });
 
+}
+ObjectMediator.prototype.orderOfParentTask = function(task) {
+  for (var i=0;i < this.objects.tasks.length; i++) {
+      if (this.objects.tasks[i] === task){
+        return i;
+      }
+  }
 }
