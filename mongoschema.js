@@ -5,6 +5,7 @@ var Schema = mongo.Schema;
 // ModelのSchema Class定義する
 var TaskSchema = new Schema({
   title       : String,
+  description : String,
   is_complete : Boolean
 });
 

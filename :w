@@ -79,35 +79,37 @@ ObjectMediator.prototype.setUp = function(config, objects) {
    var socket       = new io.Socket(config.server_host,{port:config.port}).connect(),
        v            = config.visual,
        raphael      = Raphael(document.getElementById(config.paper_id),
-                      v.paper.w, v.paper.h),
-       mediator     = this,
-       onMessage    = function (msg){mediator.dispatchMessage(msg)};
-
-   socket.on('message', function(msg) {onMessage(msg)}); // fix me
-
+                      v.paper.w, v.paper.h);
    this.socket = socket;
+   // test code
+  var  hoge = function(){log(this)};
+   socket.on('message', function(msg) {
+    log(this);
+   });
    this.taskRenderer = new TaskRenderer(config, raphael, this);
    this.config       = config;
+   this.objects      = objects;
    this.shapes       = {'start_task' : [],
                         'tasks'      : [],
                         'end_task'   : []};
-   var nextX    = v.paper.margin.w;
+   var mediator = this,
+       nextX    = v.paper.margin.w;
 
-   //this.editingTask = {task:null, shapes:null};
+   this.editingTask = {task:null, shapes:null};
 
-   //this.taskRenderer.renderStart(nextX);
+   this.taskRenderer.renderStart(nextX);
 
-   //nextX += (v.rectStart.w + v.taskMargin.w);
-   //var sets = [];
-   //for (var i=0; i < objects.tasks.length; i++) {
-   //  sets[i] = this.taskRenderer.renderTaskParent(nextX, v.paper.margin.h, objects.tasks[i], this, false)     ;
-   //  pushArrayAt(this.shapes.tasks, i, {parent:sets[i], childs:[]});
-   //  nextX += (v.rectP.w + v.taskMargin.w);
-   //}
+   nextX += (v.rectStart.w + v.taskMargin.w);
+   var sets = [];
+   for (var i=0; i < objects.tasks.length; i++) {
+     sets[i] = this.taskRenderer.renderTaskParent(nextX, v.paper.margin.h, objects.tasks[i], this, false)     ;
+     pushArrayAt(this.shapes.tasks, i, {parent:sets[i], childs:[]});
+     nextX += (v.rectP.w + v.taskMargin.w);
+   }
 
-   //this.shapes.end_task = this.taskRenderer.renderEnd(nextX,objects);
-   //this.taskRenderer.renderPath(nextX, mediator)
-   //                 .click(function(evt){mediator.onClickPath(evt)});
+   this.shapes.end_task = this.taskRenderer.renderEnd(nextX,objects);
+   this.taskRenderer.renderPath(nextX, mediator)
+                    .click(function(evt){mediator.onClickPath(evt)});
    var saveEditBox = function () {
      $('#editbox').dialog('close');
    };
@@ -133,27 +135,6 @@ ObjectMediator.prototype.setUp = function(config, objects) {
 
 };
 
-ObjectMediator.prototype.dispatchMessage = function(msg){
-   this.objects = msg;
-   var mediator = this,
-       nextX    = v.paper.margin.w;
-
-   this.editingTask = {task:null, shapes:null};
-
-   this.taskRenderer.renderStart(nextX);
-
-   nextX += (v.rectStart.w + v.taskMargin.w);
-   var sets = [];
-   for (var i=0; i < this.objects.tasks.length; i++) {
-     sets[i] = this.taskRenderer.renderTaskParent(nextX, v.paper.margin.h, this.objects.tasks[i], this, false)     ;
-     pushArrayAt(this.shapes.tasks, i, {parent:sets[i], childs:[]});
-     nextX += (v.rectP.w + v.taskMargin.w);
-   }
-
-   this.shapes.end_task = this.taskRenderer.renderEnd(nextX,this.objects);
-   this.taskRenderer.renderPath(nextX, mediator)
-                    .click(function(evt){mediator.onClickPath(evt)});
-}
 ObjectMediator.prototype.onSaveTasks = function()
 {
   this.socket.send(this.objects);
@@ -161,7 +142,7 @@ ObjectMediator.prototype.onSaveTasks = function()
 ObjectMediator.prototype.addChildTask = function(task, shapes)
 {
   var v               = this.config.visual,
-      newTask         = {title:'', tasks:[]},
+      newTask         = {title:'non title', tasks:[]},
       startTaskMargin = v.rectStart.w + v.taskMargin.w,
       x               = shapes.getBBox().x + v.taskMargin.child.w,
       y               = shapes.getBBox().y + ((task.tasks.length + 1) * (v.rectP.h + v.taskMargin.child.h)),
@@ -175,7 +156,7 @@ ObjectMediator.prototype.addParentTask = function(x)
 {
   var v               = this.config.visual,
       num             = this.taskNumAtPathX(x),
-      newTask         = {title:'', tasks:[]},
+      newTask         = {title:'non title', tasks:[]},
       taskShape       = this.taskRenderer.renderTaskParent(this.calculateTaskX(num) , v.paper.margin.h, newTask, this, true);
   //this.objects.tasks  = pushArrayAt(this.objects.tasks, num, newTask);
   //this.shapes.tasks   = pushArrayAt(this.shapes.tasks,  num, taskShape);

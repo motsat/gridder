@@ -51,17 +51,12 @@ function getObjects(){
     return  {
         'title'     :'このアプリ完成まで',
         'end_title' :'Gridder公開',
-        '__id'      :'1',
-        'tasks' :[{'__id' :'1-1',
-                   'title':'設計',
+        'tasks' :[{'title':'設計',
                    'description':'・デザイン\n・プロトタイプ\n',
                    'tasks':[]},
-                  {'__id' :'1-2',
-                   'title':'大項目2',
-                   'tasks':[{'__id' :'1-2-1',
-                             'title':'中項目1'},
-                            {'__id' :'1-2-2',
-                             'title':'中項目2'}]}]
+                  {'title':'大項目2',
+                   'tasks':[{'title':'中項目1'},
+                            {'title':'中項目2'}]}]
     };
 }
 </script>
@@ -70,7 +65,8 @@ function getObjects(){
     <div class='header'>
         <div class='title'><img width='109px' height='41px' src='/images/Grits.png'/></div>
     </div>
-<div class='campus' id='main_boad'></div>
+    <input type='button' id='save_button' value='save'/> 
+    <div class='campus' id='main_boad'></div>
 <div id='editbox' title='編集'>
     <form onSubmit='return false;' id='editform'>
         title <br/><input id='task_title' value='' type='text'><br/>
