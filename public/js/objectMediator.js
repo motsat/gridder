@@ -81,7 +81,7 @@ ObjectMediator.prototype.setUp = function(config, objects) {
        raphael      = Raphael(document.getElementById(config.paper_id),
                       v.paper.w, v.paper.h),
        mediator     = this,
-       onMessage    = function (msg){mediator.dispatchMessage(msg)};
+       onMessage    = function (msg) {mediator.dispatchMessage(msg)};
 
    socket.on('message', function(msg) {onMessage(msg)}); // fix me
 
@@ -108,18 +108,20 @@ ObjectMediator.prototype.setUp = function(config, objects) {
    //this.shapes.end_task = this.taskRenderer.renderEnd(nextX,objects);
    //this.taskRenderer.renderPath(nextX, mediator)
    //                 .click(function(evt){mediator.onClickPath(evt)});
+
    var saveEditBox = function () {
+     $.each(mediator.editingTask.shapes , function(idx, elm) {
+         if (elm.type == 'text') {
+         elm.attr({text:$('#task_title').val()});
+         }
+         });
+     mediator.editingTask.task.title = $('#task_title').val();
      $('#editbox').dialog('close');
    };
+
   // setup editBox
   var onEnterKeyDown = function (evt){
       if (evt.keyCode =='13') {
-        $.each(mediator.editingTask.shapes , function(idx, elm) {
-            if (elm.type == 'text') {
-              elm.attr({text:$('#task_title').val()});
-            }
-        });
-        mediator.editingTask.task.title = $('#task_title').val();
         saveEditBox();
       }
   };
@@ -132,12 +134,10 @@ ObjectMediator.prototype.setUp = function(config, objects) {
   $('#save_button').click(function (evt) {mediator.onSaveTasks()});
 
 };
-
 ObjectMediator.prototype.dispatchMessage = function(msg){
    this.objects = msg;
    var mediator = this,
        nextX    = v.paper.margin.w;
-
    this.editingTask = {task:null, shapes:null};
 
    this.taskRenderer.renderStart(nextX);

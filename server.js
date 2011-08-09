@@ -15,26 +15,27 @@ app.configure(function() {
 });
 app.listen(8000);
 
-mongoose.connect('mongodb://localhost/gridder',
-  function (err) {
-    if (err) {
-      exitWithError(err);
-    }
-  }
-);
+mongoose.connect('mongodb://localhost/gridder', onMongoConnected);
 for (var i=0; i < schemas.length; i++) {
   mongoose.model(schemas[i].name, schemas[i].schema);
 }
-var Task = mongoose.model('Task'),
+
+var Task   = mongoose.model('Task'),
     socket = io.listen(app);
 
 socket.on('connection', function(client) {
   sendSavedTask(client);
   client.on('message', function(msg) {
-    var task = new Task(msg);
-    task.save(function(err) {
+    //var task = new Task(msg);
+    var id = msg._id;
+    delete(msg._id);
+    Task.update({_id:id}, msg ,function(err) {
         console.log(err || 'saved');
-      });
+    });
+
+    // task.save(function(err) {
+    //     console.log(err || 'saved');
+    // });
   }
   );
   client.on('disconnect', function() {onDisconnect(client)});
@@ -50,7 +51,7 @@ function sendSavedTask(client)
     }
       console.log(doc);
       client.send(doc);
-    });
+  });
 
 }
 function onDisconnect(client)
@@ -60,11 +61,21 @@ function onMessage(msg, client)
 {
   console.log(msg.tasks);
 }
+function onMongoConnected(err)
+{
+  console.log(this);
+  if (err) {
+    exitWithError(err);
+  } else {
+    console.log('mongo connect success');
+  }
+}
 function nowDate()
 {
   d = new Date();
   return  d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDate()+ " "+ d.getHours()+':' +d.getMinutes()+':' + d.getSeconds();
 }
+
 function exitWithError(err)
 {
   console.log(err);
