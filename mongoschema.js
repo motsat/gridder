@@ -22,7 +22,5 @@ var StorySchema = new Schema({
 
 exports.schemas = function() {
   return [{name   : 'Task',
-           schema : TaskSchema},
-          {name   : 'Task',
-           schema : TaskSchema}] 
+           schema : TaskSchema}]
 }

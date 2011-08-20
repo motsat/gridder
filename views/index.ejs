@@ -3,7 +3,7 @@
 <link rel='stylesheet' href="/css/main.css">
 <link rel='stylesheet' href="/css/ui-lightness/jquery-ui-1.8.13.custom.css">
 <title>Grits</title>
-<script src="/js/socket.io.js"></script>
+<script type="text/javascript" src="/socket.io/socket.io.js"></script>
 <script src="/js/json2.js"></script>
 <script src="/js/raphael.js"></script>
 <script src="/js/objectConst.js"></script>
@@ -33,32 +33,19 @@ var v = {'paper'     :{'w':1000, 'h':250,'margin':{'w':30,'h':10}},
                        'attr':{"stroke":"orange", "stroke-width":1, "gradient":'100-#FFCD35-#FFD659'}},
          'rectMOn'   :{'attr':{"stroke":"crimson" , "scale":1.5}},
          'font_m'    :{'padding_rect':{x:10,y:20},
-                       'attr':{'text-anchor': 'start',"fill":"#333333",'font-size':14, 'font-family':''}},
+                       'attr':{'text-anchor': 'start',"fill":"#333333",'font-size':14, 'font-family':'sans-serif'}},
          'icon'      :{"w":20,"h":20, "margin":20},
          'taskMargin':{w:30,child:{w:10,h:10}},
          'taskR'     :10};
 
 $ (function() {
     var config = {'paper_id'   :'main_boad',
-                  'server_host':'motoki.local',
-                  'port'       :'8000',
+                  'server_host':'www3342ua.sakura.ne.jp',
+                  'port'       :'80',
                   'visual'     :v};
     var mediator = new ObjectMediator();
-    mediator.setUp(config, getObjects());
+    mediator.setUp(config);
  });
-function getObjects(){
-
-    return  {
-        'title'     :'このアプリ完成まで',
-        'end_title' :'Gridder公開',
-        'tasks' :[{'title':'設計',
-                   'description':'・デザイン\n・プロトタイプ\n',
-                   'tasks':[]},
-                  {'title':'大項目2',
-                   'tasks':[{'title':'中項目1'},
-                            {'title':'中項目2'}]}]
-    };
-}
 </script>
 </head>
 <body>
