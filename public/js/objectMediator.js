@@ -13,7 +13,7 @@ TaskRenderer.prototype.renderBase = function(str, x, y, attr, editOptions) {
                         .attr($.extend(attr, {'scale':0.1})),
        text           = this.raphael.text(x + v.font_m.padding_rect.x, y + v.font_m.padding_rect.y, str).
                         attr(v.font_m.attr),
-       onEndAnimation = null,
+       onEndAnimation = function() {},
        mediator       = this.mediator,
        sets           = this.raphael.set().push(rect, text);
 
@@ -51,11 +51,9 @@ TaskRenderer.prototype.renderParentTask = function(x, y, parentTask, mediator, o
   return sets;
 }
 
-TaskRenderer.prototype.renderChildTask2 = function(parentNum, childNum,  mediator) {
-
+TaskRenderer.prototype.renderChildTask = function(parentNum, childNum,  mediator, options) {
   // fix me
-  var openOnCraeted = false;
-  
+  var openOnCraeted   = options && options.openOnCraeted;
   var parentTask      = mediator.objects.tasks[parentNum],
       parentShapes    = mediator.shapes.tasks[parentNum].parent;
       childTask       = parentTask.tasks[childNum],
@@ -68,12 +66,15 @@ TaskRenderer.prototype.renderChildTask2 = function(parentNum, childNum,  mediato
                          .attr($.extend(this.v.pathL.attr,{'scale':0.1}))
                          .animate({'scale':1}, 100)
                          .toBack();
-  chilsSets.push(path);
-
-  chilsSets.click(function(){mediator.showEditBox(parentTask.tasks[childNum], chilsSets)});
-
-  var order = mediator.getParentSortNumber(parentTask);
-  mediator.shapes.tasks[order].childs.push(chilsSets);
+      chilsSets.push(path)
+  var parentNum = mediator.getParentSortNumber(parentTask);
+  mediator.shapes.tasks[parentNum].childs.push(chilsSets);
+  // var ChildTask等の固定の変数をclidkのパラメータとして渡すと、
+  // このプロトタイプは最後に実行されたものを保持するので下記の記述にする。それぞれのタスクにユニークなIDをふろう。。
+  // これじゃ、削除とかぜんぜん対応できなそう
+  chilsSets.click(function() {mediator.showEditBox(parentTask.tasks[childNum], 
+                              mediator.shapes.tasks[parentNum].childs[childNum], 
+                              childNum, parentTask.tasks)});
 
   return chilsSets;
 }
@@ -102,15 +103,12 @@ ObjectMediator.prototype.setUp = function(config) {
    var nextX         = v.paper.margin.w;
 
    var saveEditBox = function () {
-     log('execute saveEditbox');
      $.each(mediator.editingTask.shapes , function(idx, elm) {
        if (elm.type == 'text') {
-         log('--set text');
          elm.attr({text:$('#task_title').val()});
        }
      });
      mediator.editingTask.task.title = $('#task_title').val();
-     log('task data save');
      $('#editbox').dialog('close');
    };
 
@@ -130,7 +128,6 @@ ObjectMediator.prototype.setUp = function(config) {
 
 };
 ObjectMediator.prototype.dispatchMessage = function(msg){
-   log('execute dispatchMessage!');
    this.objects = msg;
    var mediator = this,
        nextX    = v.paper.margin.w;
@@ -140,21 +137,17 @@ ObjectMediator.prototype.dispatchMessage = function(msg){
 
    nextX += (v.rectStart.w + v.taskMargin.w);
    var parentSets = [];
-   for (var i=0; i < this.objects.tasks.length; i++) {
-     var parentTask  = this.objects.tasks[i],
-         childShapes = [];
+   for (var parentNum = 0; parentNum < this.objects.tasks.length; parentNum++) {
+     var parentTask  = this.objects.tasks[parentNum];
 
-     // render parentTask
-     parentSets[i] = this.taskRenderer.renderParentTask(nextX, v.paper.margin.h, parentTask, this, false);
-     pushArrayAt(this.shapes.tasks, i, {parent:parentSets[i], childs:[]});
+     parentSets[parentNum] = this.taskRenderer.renderParentTask(nextX, v.paper.margin.h, parentTask, this, false);
+     pushArrayAt(this.shapes.tasks, parentNum, {parent:parentSets[parentNum], childs:[]});
 
      if (parentTask.tasks){
        var childTasks  = parentTask.tasks,
            childLength = childTasks.length;
-       for (var n = 0; n < childLength; n++) {
-         var parentNum = i,
-             childNum  = n;
-         this.taskRenderer.renderChildTask2(parentNum, childNum,  mediator);
+       for (var childNum = 0; childNum < childLength; childNum++) {
+         this.taskRenderer.renderChildTask(parentNum, childNum,  mediator);
         }
      }
      nextX += (v.rectP.w + v.taskMargin.w);
@@ -171,7 +164,6 @@ ObjectMediator.prototype.onSaveTasks = function()
 }
 ObjectMediator.prototype.addChildTask = function(parentShapes, childTask, parentTask)
 {
-  log('execute addChildTask!');
   // fix me
   // pos系統とかをrenderChildTaskにおとしこむ？
   var v               = this.config.visual,
@@ -182,11 +174,10 @@ ObjectMediator.prototype.addChildTask = function(parentShapes, childTask, parent
   parentTask.tasks.push(childTask);
   var parentNum = this.getParentSortNumber(parentTask),
       childNum  = parentTask.tasks.length - 1;
-  this.taskRenderer.renderChildTask2(parentNum, childNum, this);
+  this.taskRenderer.renderChildTask(parentNum, childNum, this, {openOnCraeted:true});
 }
 ObjectMediator.prototype.addParentTask = function(x)
 {
-   log('execute addParentTask!');
   var v         = this.config.visual,
       num       = this.taskNumAtPathX(x),
       newTask   = {title:'', tasks:[]},
@@ -203,11 +194,7 @@ ObjectMediator.prototype.calculateTaskX = function(num)
 
 }
 ObjectMediator.prototype.moveRaphaelSets = function(sets, x) {
-  log('execute moveRaphaelSets!');
   for (var n = 0; n < sets.items.length; n++){
-    // fix me
-    log(sets.attr({"stroke":"darkblue"}));
-
     var item  = sets.items[n];
     if (item.type == 'path') {
       path = $.extend(true, [], item.attr('path')); // deep copy
@@ -222,7 +209,6 @@ ObjectMediator.prototype.moveRaphaelSets = function(sets, x) {
 
 ObjectMediator.prototype.moveTaskShapesAt = function(num) 
 {
-  log('execute moveTaskShapesAt!');
   var parentShapes = this.shapes.tasks,
       v            = this.config.visual;
   this.moveRaphaelSets(this.shapes.end_task, v.rectP.w + v.taskMargin.w );
@@ -244,27 +230,23 @@ ObjectMediator.prototype.moveTaskShapesAt = function(num)
 }
 
 ObjectMediator.prototype.onClickPath = function(evt) {
-  log('execute onClickPath!');
   this.addParentTask(evt.x);
 }
 ObjectMediator.prototype.taskNumAtPathX = function(pathX) {
-  log('execute taskNumAtPathX!');
   // 計算式が適当なので詳細詰め
   var v = this.config.visual;
   return parseInt(pathX / (v.taskMargin.w + v.rectP.w))-1;
 }
 
-ObjectMediator.prototype.showEditBox = function(task, shapes) {
-  log('execute showEditBox!');
-  mediator.editingTask = {task:task, shapes:shapes};
-  $('#task_id').val(task.__id);
-  $('#task_title').val(task.title);
-  $('#task_description').val(task.description);
+ObjectMediator.prototype.showEditBox = function(targetTask, shapes, num, childtasks) {
+  this.editingTask = {task:targetTask, shapes:shapes};
+  $('#task_id').val(targetTask.__id);
+  $('#task_title').val(targetTask.title);
+  $('#task_description').val(targetTask.description);
   $('#editbox').dialog( { draggable: true });
 
 }
 ObjectMediator.prototype.getParentSortNumber = function(parentTask) {
-  log('execute getParentSortNumber!');
   var length = this.objects.tasks.length;
   for (var i=0; i < length; i++) {
       if (this.objects.tasks[i] === parentTask) {
