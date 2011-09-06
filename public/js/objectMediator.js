@@ -72,8 +72,50 @@ TaskRenderer.prototype.renderChildTask = function(parentNum, childNum,  mediator
   // var ChildTask等の固定の変数をclidkのパラメータとして渡すと、
   // このプロトタイプは最後に実行されたものを保持するので下記の記述にする。それぞれのタスクにユニークなIDをふろう。。
   // これじゃ、削除とかぜんぜん対応できなそう
-  chilsSets.click(function() {mediator.showEditBox(parentTask.tasks[childNum], 
-                              mediator.shapes.tasks[parentNum].childs[childNum], 
+  // 取り出す, 追加, 削除
+  // 親 - 子
+  //    - 子 - 子
+  //         - 子
+  //         - 子
+  //    - 子
+  //    - 子
+  // task[hash]:properties:
+  //           :shapes:
+  //tasks = [ key  : 'a',
+  //          data : {},
+  //          childs:[
+  //              {key   :'b',
+  //               data  :''],
+  //              {key   :'b',
+  //               parent:'',
+  //               data  :''],
+  //  ]
+  //]
+  //{ "_id" : ObjectId("4e486a7b08d262b648000001"), "parent" : [ ], "child" : [ ], "title" : "このアプリ完成まで", "tasks" : [
+  //  {
+  //    "title" : "設計",
+  //    "description" : "・デザイン\n・プロトタイプ\n",
+  //    "tasks" : [
+  //    {
+  //      "title" : "non titleaa",
+  //      "tasks" : [ ]
+  //    }
+  //    ]
+  //  },
+  //  {
+  //    "title" : "プロトタイプ",
+  //    "tasks" : [
+  //    {
+  //      "title" : "中項目1"
+  //    },
+  //    {
+  //      "title" : "中項目2"
+  //    }
+  //    ]
+  //  }
+  //  ], "end_title" : "Gridder公開" }
+  chilsSets.click(function() {mediator.showEditBox(parentTask.tasks[childNum],
+                              mediator.shapes.tasks[parentNum].childs[childNum],
                               childNum, parentTask.tasks)});
 
   return chilsSets;
@@ -88,13 +130,14 @@ TaskRenderer.prototype.renderPath = function(x, mediator){
 }
 ObjectMediator = function() {};
 ObjectMediator.prototype.setUp = function(config) {
+   console.log(CybozuLabs.MD5.calc("abc"));
    var socket   = new io.connect(config.server_host,{port:config.port});//.connect(),
        v        = config.visual,
        raphael  = Raphael(document.getElementById(config.paper_id), v.paper.w, v.paper.h),
        mediator = this;
    socket.on('message', function(msg) {
      mediator.dispatchMessage(msg)
-   }); 
+   });
 
    this.socket       = socket;
    this.taskRenderer = new TaskRenderer(config, raphael, this);
@@ -141,7 +184,7 @@ ObjectMediator.prototype.dispatchMessage = function(msg){
      var parentTask  = this.objects.tasks[parentNum];
 
      parentSets[parentNum] = this.taskRenderer.renderParentTask(nextX, v.paper.margin.h, parentTask, this, false);
-     pushArrayAt(this.shapes.tasks, parentNum, {parent:parentSets[parentNum], childs:[]});
+     this.shapes.tasks.splice(parentNum, 0,{parent:parentSets[parentNum], childs:[]});
 
      if (parentTask.tasks){
        var childTasks  = parentTask.tasks,
@@ -182,8 +225,10 @@ ObjectMediator.prototype.addParentTask = function(x)
       num       = this.taskNumAtPathX(x),
       newTask   = {title:'', tasks:[]},
       taskShape = this.taskRenderer.renderParentTask(this.calculateTaskX(num) , v.paper.margin.h, newTask, this, true);
-  pushArrayAt(this.objects.tasks, num, newTask);
-  pushArrayAt(this.shapes.tasks,  num, {parent:taskShape, childs:[]});
+
+  this.objects.tasks.splice(num, 0, newTask);
+  this.shapes.tasks.splice(num, 0, {parent:taskShape, childs:[]});
+
   this.moveTaskShapesAt(num + 1); // 追加分以降のものを移動
 }
 ObjectMediator.prototype.calculateTaskX = function(num)
