@@ -71,9 +71,8 @@ TaskRenderer.prototype.renderChildTask = function(parentNum, childNum,  mediator
       childSets.push(path)
   var parentNum = mediator.getParentSortNumber(parentTask);
   childTask.shapes = childSets;
-
   childSets.click(function() {mediator.showEditBox(parentTask.tasks[childNum],
-                              childTask.shapes,
+                              mediator.shapes.tasks[parentNum].childs[childNum],
                               childNum, parentTask.tasks)});
 
   return childSets;
@@ -140,7 +139,8 @@ ObjectMediator.prototype.dispatchMessage = function(msg){
    for (var parentNum = 0; parentNum < this.objects.tasks.length; parentNum++) {
      var parentTask  = this.objects.tasks[parentNum];
 
-     this.taskRenderer.renderParentTask(nextX, v.paper.margin.h, parentTask, this, false);
+     /*parentSets[parentNum] = */this.taskRenderer.renderParentTask(nextX, v.paper.margin.h, parentTask, this, false);
+     //this.shapes.tasks.splice(parentNum, 0,{parent:parentSets[parentNum], childs:[]});
 
      if (parentTask.tasks){
        var childTasks  = parentTask.tasks,
@@ -167,6 +167,8 @@ ObjectMediator.prototype.addChildTask = function(/*parentShapes, */childTask, pa
   // pos系統とかをrenderChildTaskにおとしこむ？
   var v               = this.config.visual,
       startTaskMargin = v.rectStart.w + v.taskMargin.w,
+      //x               = parentShapes.getBBox().x + v.taskMargin.child.w,
+      //y               = parentShapes.getBBox().y + ((parentTask.tasks.length + 1) * (v.rectP.h + v.taskMargin.child.h));
       x               = parentTask.shapes.getBBox().x + v.taskMargin.child.w,
       y               = parentTask.shapes.getBBox().y + ((parentTask.tasks.length + 1) * (v.rectP.h + v.taskMargin.child.h));
 
@@ -187,10 +189,9 @@ ObjectMediator.prototype.addParentTask = function(x)
   newTask.shapes = taskShape;
 
   this.objects.tasks.splice(num, 0, newTask);
-  var addTaskNum = num + 1;
-  if (addTaskNum  < this.objects.tasks.length) {
-    this.moveTaskShapesAt(addTaskNum); // 追加分以降のものを移動
-  }
+  //this.shapes.tasks.splice(num, 0, {parent:taskShape, childs:[]});
+
+  this.moveTaskShapesAt(num + 1); // 追加分以降のものを移動
 }
 ObjectMediator.prototype.calculateTaskX = function(num)
 {
@@ -215,19 +216,25 @@ ObjectMediator.prototype.moveRaphaelSets = function(sets, x) {
 
 ObjectMediator.prototype.moveTaskShapesAt = function(num) 
 {
-   var allParentTasks  = this.objects.tasks,
-       v               = this.config.visual;
+   var parentTask = this.objects.tasks[num];
 
-  if (allParentTasks.length <= 0 ) {
+   var parentShapes = parentTask.shapes,
+       v            = this.config.visual;
+  // ここはまだ
+  log('end_task shape is not exist');
+  //this.moveRaphaelSets(this.shapes.end_task, v.rectP.w + v.taskMargin.w );
+
+  if (parentTask.shapes.length <= 0 ) {
     return;
   }
 
-  for (var i = num; i < allParentTasks.length; i++) {
-    var parentTask =  allParentTasks[i];
-    this.moveRaphaelSets(parentTask.shapes, v.rectP.w + v.taskMargin.w );
-    if (0 < parentTask.tasks.length) {
-      for (var z = 0; z < parentTask.tasks.length; z++) {
-        this.moveRaphaelSets(parentTask.tasks[z].shapes, v.rectP.w + v.taskMargin.w);
+  for (var i = num; i < parentShapes.length; i++) {
+    //this.moveRaphaelSets(parentShapes[i].parent, v.rectP.w + v.taskMargin.w );
+    if (0 < parentShapes[i].childs.length) {
+      var childs       = parentShapes[i].childs,
+          childsLength = childs.length;
+      for (var z = 0; z < childsLength; z++) {
+        this.moveRaphaelSets(childs[z], v.rectP.w + v.taskMargin.w);
       }
     }
   }
