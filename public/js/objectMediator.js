@@ -35,7 +35,7 @@ TaskRenderer.prototype.renderStart = function(x) {
 
 TaskRenderer.prototype.renderEnd = function(x, task) {
    var v = this.v;
-   return this.renderBase(task.end_title, x, y = v.paper.margin.h, v.rectEnd.attr);
+   return this.renderBase(task.title, x, y = v.paper.margin.h, v.rectEnd.attr);
 }
 
 TaskRenderer.prototype.renderParentTask = function(x, y, parentTask, mediator, openOnCraeted){
@@ -99,7 +99,6 @@ ObjectMediator.prototype.setUp = function(config) {
    this.socket       = socket;
    this.taskRenderer = new TaskRenderer(config, raphael, this);
    this.config       = config;
-   //this.shapes       = {'start_task':[], 'tasks':[], 'end_task':[]};
    var nextX         = v.paper.margin.w;
 
    var saveEditBox = function () {
@@ -133,7 +132,8 @@ ObjectMediator.prototype.dispatchMessage = function(msg){
        nextX    = v.paper.margin.w;
 
    this.editingTask = {task:null, shapes:null};
-   this.taskRenderer.renderStart(nextX);
+   this.objects.startTask = {shapes:null, title:''};
+   this.objects.startTask.shapes = this.taskRenderer.renderStart(nextX);
 
    nextX += (v.rectStart.w + v.taskMargin.w);
    var parentSets = [];
@@ -151,8 +151,8 @@ ObjectMediator.prototype.dispatchMessage = function(msg){
      }
      nextX += (v.rectP.w + v.taskMargin.w);
    }
-
-   /*this.shapes.end_task =*/ this.taskRenderer.renderEnd(nextX,this.objects);
+   this.objects.endTask = {shapes:null, title:this.objects.end_title};
+   this.objects.endTask.shapes = this.taskRenderer.renderEnd(nextX, this.objects.endTask);
    this.taskRenderer.renderPath(nextX, mediator)
                     .click(function(evt){mediator.onClickPath(evt)});
 
@@ -183,7 +183,6 @@ ObjectMediator.prototype.addParentTask = function(x)
       newTask   = {title:'', tasks:[], key:getTaskKey()},
       taskShape = this.taskRenderer.renderParentTask(this.calculateTaskX(num) , v.paper.margin.h, newTask, this, true);
 
-  // 110909
   newTask.shapes = taskShape;
 
   this.objects.tasks.splice(num, 0, newTask);
@@ -191,6 +190,7 @@ ObjectMediator.prototype.addParentTask = function(x)
   if (addTaskNum  < this.objects.tasks.length) {
     this.moveTaskShapesAt(addTaskNum); // 追加分以降のものを移動
   }
+  this.moveRaphaelSets(this.objects.endTask.shapes, v.rectP.w + v.taskMargin.w );
 }
 ObjectMediator.prototype.calculateTaskX = function(num)
 {
