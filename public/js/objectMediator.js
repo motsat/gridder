@@ -38,9 +38,9 @@ TaskRenderer.prototype.renderEnd = function(x, task) {
    return this.renderBase(task, x, y = v.paper.margin.h, v.rectEnd.attr);
 }
 
-TaskRenderer.prototype.renderParentTask = function(x, y, parentTask, mediator, openOnCraeted){
-
-  var shapes = this.renderBase(parentTask, x, y, v.rectP.attr, {openOnCraeted:openOnCraeted}),
+TaskRenderer.prototype.renderParentTask = function(x, y, parentTask, opt){
+  var mediator = this.mediator;
+  var shapes = this.renderBase(parentTask, x, y, v.rectP.attr, opt),
       addImg = this.raphael.image('/images/plus.png', x , y + (v.rectP.h / 2)+10, w = v.icon.w, h = v.icon.h)
                    .click(function() {mediator.addChildTask({'title':'', 'key':getTaskKey()}, parentTask)});
 
@@ -109,7 +109,7 @@ ObjectMediator.prototype.setUp = function(config) {
          elm.attr({text:$('#task_title').val()});
        }
      });
-     mediator.editingTask.task.title = $('#task_title').val();
+     mediator.editingTask.title = $('#task_title').val();
      $('#editbox').dialog('close');
    };
 
@@ -142,7 +142,7 @@ ObjectMediator.prototype.dispatchMessage = function(msg){
    for (var parentNum = 0; parentNum < this.objects.tasks.length; parentNum++) {
      var parentTask  = this.objects.tasks[parentNum];
 
-     this.taskRenderer.renderParentTask(nextX, v.paper.margin.h, parentTask, this, false);
+     this.taskRenderer.renderParentTask(nextX, v.paper.margin.h, parentTask, {openOnCraeted:false});
 
      if (parentTask.tasks){
        var childTasks  = parentTask.tasks,
@@ -165,8 +165,6 @@ ObjectMediator.prototype.onSaveTasks = function()
 }
 ObjectMediator.prototype.addChildTask = function(/*parentShapes, */childTask, parentTask)
 {
-  // fix me
-  // pos系統とかをrenderChildTaskにおとしこむ？
   var v               = this.config.visual,
       startTaskMargin = v.rectStart.w + v.taskMargin.w,
       x               = parentTask.shapes.getBBox().x + v.taskMargin.child.w,
@@ -183,7 +181,7 @@ ObjectMediator.prototype.addParentTask = function(x)
   var v         = this.config.visual,
       num       = this.taskNumAtPathX(x),
       newTask   = {title:'', tasks:[], key:getTaskKey()},
-      taskShape = this.taskRenderer.renderParentTask(this.calculateTaskX(num) , v.paper.margin.h, newTask, this, true);
+      taskShape = this.taskRenderer.renderParentTask(this.calculateTaskX(num) , v.paper.margin.h, newTask, {openOnCraeted:true});
   newTask.shapes = taskShape;
 
   this.objects.tasks.splice(num, 0, newTask);
@@ -244,8 +242,7 @@ ObjectMediator.prototype.taskNumAtPathX = function(pathX) {
 }
 
 ObjectMediator.prototype.showEditBox = function(targetTask) {
-  log(targetTask); 
-  this.editingTask = {task:targetTask, shapes:targetTask.shapes};
+  this.editingTask = targetTask;
   $('#task_id').val(targetTask.__id);
   $('#task_title').val(targetTask.title);
   $('#task_description').val(targetTask.description);
