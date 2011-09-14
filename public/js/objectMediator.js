@@ -2,6 +2,42 @@
 // task
 // parentTaskの設定で文字いれないと、childTaskが変な場所になる
 //
+EditManager = function() {
+  this.stats    = {editTask:'editTask',
+                   addTask:'addTask'};
+  this.nowStats = [];
+}
+EditManager.prototype.startEditTask = function() {
+  this.nowStats.push(this.stats.editTask);
+}
+EditManager.prototype.endEditTask = function() {
+  this.deleteStats(this.stats.editTask);
+}
+EditManager.prototype.hasStates = function(states) {
+  if ((typeof states)  != 'Array') {
+    states = [states];
+  }
+
+  for (var i = 0; i < states.length; i++) {
+      if (-1 < $.inArray(states[i], this.nowStats)) {
+        return true;
+    }
+  }
+  return false;
+}
+EditManager.prototype.deleteStats = function(state) {
+  var index = $.inArray(state, this.nowStats);
+  log(index);
+  if (index < 0) {
+    return;
+  }
+  log(this.nowStats);
+  delete(this.nowStats[index]); 
+  log(this.nowStats);
+}
+EditManager.prototype.canEditTask = function() {
+  return !this.hasStates(this.stats.editTask);
+}
 TaskRenderer = function(config, raphael, mediator) {
     this.v        = config.visual;
     this.raphael  = raphael;
@@ -91,9 +127,9 @@ TaskRenderer.prototype.renderPath = function(x, mediator){
 ObjectMediator = function() {};
 ObjectMediator.prototype.setUp = function(config) {
   var socket   = new io.connect(config.server_host,{port:config.port});//.connect(),
-       v        = config.visual,
-       raphael  = Raphael(document.getElementById(config.paper_id), v.paper.w, v.paper.h),
-       mediator = this;
+      v        = config.visual,
+      raphael  = Raphael(document.getElementById(config.paper_id), v.paper.w, v.paper.h),
+      mediator = this;
    socket.on('message', function(msg) {
      mediator.dispatchMessage(msg)
    });
@@ -101,6 +137,8 @@ ObjectMediator.prototype.setUp = function(config) {
    this.socket       = socket;
    this.taskRenderer = new TaskRenderer(config, raphael, this);
    this.config       = config;
+   this.editManager = new EditManager();
+   var editManager = this.editManager;
    var nextX         = v.paper.margin.w;
 
    var saveEditBox = function () {
@@ -111,6 +149,7 @@ ObjectMediator.prototype.setUp = function(config) {
      });
      mediator.editingTask.title = $('#task_title').val();
      $('#editbox').dialog('close');
+     editManager.endEditTask();
    };
 
    // setup editBox
@@ -127,13 +166,13 @@ ObjectMediator.prototype.setUp = function(config) {
   // save_button
   $('#save_button').click(function (evt) {mediator.onSaveTasks()});
 
+
 };
 ObjectMediator.prototype.dispatchMessage = function(msg){
    this.objects = msg;
    var mediator = this,
        nextX    = v.paper.margin.w;
 
-   this.editingTask = {task:null, shapes:null};
    this.objects.startTask = {shapes:null, title:''};
    this.objects.startTask.shapes = this.taskRenderer.renderStart(nextX);
 
@@ -242,11 +281,23 @@ ObjectMediator.prototype.taskNumAtPathX = function(pathX) {
 }
 
 ObjectMediator.prototype.showEditBox = function(targetTask) {
+  if (!this.editManager.canEditTask()) {
+    log('task edit disable');
+    return;
+  }
+  log('task edit enble');
+
+  this.editManager.startEditTask();
+  var editManager = this.editManager;
+
   this.editingTask = targetTask;
   $('#task_id').val(targetTask.__id);
   $('#task_title').val(targetTask.title);
   $('#task_description').val(targetTask.description);
-  $('#editbox').dialog( { draggable: true });
+  $('#editbox').dialog({draggable:true});
+  $('#editbox').bind( "dialogbeforeclose", function(event, ui) {
+    editManager.endEditTask();
+  });
 
 }
 ObjectMediator.prototype.getParentSortNumber = function(parentTask) {
